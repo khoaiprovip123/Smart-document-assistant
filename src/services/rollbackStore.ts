@@ -11,6 +11,14 @@ export function hasSameDocumentStructure(expected: DocumentSnapshot, current: Do
   });
 }
 
+export function assertRollbackSafe(expected: DocumentSnapshot, current: DocumentSnapshot): void {
+  if (!hasSameDocumentStructure(expected, current)) {
+    throw new Error(
+      "Tài liệu đã thay đổi nội dung hoặc cấu trúc kể từ lần sửa gần nhất. Rollback đã bị chặn để tránh áp định dạng sai đoạn."
+    );
+  }
+}
+
 export const rollbackStore = {
   save(snapshot: DocumentSnapshot) {
     lastSnapshot = structuredClone(snapshot);
