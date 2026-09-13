@@ -20,18 +20,7 @@ export async function readDocumentSnapshot(): Promise<DocumentSnapshot> {
 
   return Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
-    paragraphs.load({
-      items: {
-        text: true,
-        style: true,
-        alignment: true,
-        firstLineIndent: true,
-        spaceBefore: true,
-        spaceAfter: true,
-        lineSpacing: true,
-        font: { name: true, size: true }
-      }
-    });
+    paragraphs.load("text,style,alignment,firstLineIndent,spaceBefore,spaceAfter,lineSpacing,font/name,font/size");
 
     const supportsPageSetup = pageSetupSupported();
     const pageSetup = supportsPageSetup ? context.document.pageSetup : undefined;
@@ -93,7 +82,7 @@ export async function applyFindings(profile: DocumentRuleProfile, findings: Find
 
   await Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
-    paragraphs.load("items");
+    paragraphs.load("text");
     await context.sync();
 
     if (pageSetupSupported() && actionable.some((finding) => isPageSetupField(finding.field))) {
@@ -164,7 +153,7 @@ export async function rollbackLastChange(): Promise<boolean> {
 
   await Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
-    paragraphs.load("items");
+    paragraphs.load("text");
     await context.sync();
 
     if (snapshot.supportsPageSetup && snapshot.pageSetup && pageSetupSupported()) {
@@ -204,7 +193,7 @@ export async function normalizeSelectedText(profile: DocumentRuleProfile): Promi
     range.font.name = profile.body.fontName;
     range.font.size = profile.body.fontSize.preferred;
     const paragraphs = range.paragraphs;
-    paragraphs.load("items");
+    paragraphs.load("text");
     await context.sync();
     paragraphs.items.forEach((paragraph) => {
       paragraph.alignment = profile.body.alignment;
