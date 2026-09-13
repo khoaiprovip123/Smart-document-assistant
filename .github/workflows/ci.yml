@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, verify/phase2-safe-autofix-rollback]
   pull_request:
     branches: [main]
 
