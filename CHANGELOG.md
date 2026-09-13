@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Phase 2 - Safe Auto-Fix & Rollback Hardening
+
+- Chặn Auto-Fix đối với font/cỡ chữ `Mixed/Unknown` để bảo toàn mixed/run-level formatting.
+- Luôn tạo finding `BODY-FONT-SIZE` khi Word trả mixed/unknown, nhưng đánh dấu manual-only.
+- Bổ sung document structure guard cho rollback.
+- Rollback bị chặn nếu số lượng, thứ tự hoặc nội dung paragraph thay đổi sau lần Fix.
+- Bổ sung regression tests cho mixed formatting và rollback safety.
+- Quy trình kiểm chứng Phase 2: TDD RED → GREEN, sau đó chạy lại Build + Unit Tests + Office manifest validation trên HEAD trước khi merge `main`.
+
 ## 0.1.0 - 2026-09-13
 
 - Khởi tạo Microsoft Word Office Add-in.

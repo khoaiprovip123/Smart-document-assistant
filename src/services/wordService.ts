@@ -1,6 +1,6 @@
 import type { DocumentRuleProfile, DocumentSnapshot, Finding, ParagraphSnapshot } from "../types";
 import { mmToPoints } from "../utils/units";
-import { rollbackStore } from "./rollbackStore";
+import { assertRollbackSafe, rollbackStore } from "./rollbackStore";
 
 function isWordHost(): boolean {
   return typeof Office !== "undefined" && Office.context?.host === Office.HostType.Word;
@@ -150,6 +150,9 @@ export async function applyFindings(profile: DocumentRuleProfile, findings: Find
 export async function rollbackLastChange(): Promise<boolean> {
   const snapshot = rollbackStore.get();
   if (!snapshot) return false;
+
+  const current = await readDocumentSnapshot();
+  assertRollbackSafe(snapshot, current);
 
   await Word.run(async (context) => {
     const paragraphs = context.document.body.paragraphs;
