@@ -73,6 +73,39 @@ describe("rule engine", () => {
     expect(result.score).toBeLessThan(100);
   });
 
+  it("marks mixed or unknown font properties as manual-only", () => {
+    const profile = getProfile("HPC-ND30");
+    const snapshot: DocumentSnapshot = {
+      supportsPageSetup: false,
+      paragraphs: [
+        {
+          index: 0,
+          text: "Đoạn có mixed formatting",
+          style: "Normal",
+          fontName: undefined,
+          fontSize: undefined,
+          alignment: "Justified",
+          firstLineIndentPt: mmToPoints(10)
+        }
+      ]
+    };
+
+    const result = evaluateDocument(profile, snapshot);
+    const fontNameFinding = result.findings.find((f) => f.ruleId === "BODY-FONT-NAME");
+    const fontSizeFinding = result.findings.find((f) => f.ruleId === "BODY-FONT-SIZE");
+
+    expect(fontNameFinding).toMatchObject({
+      severity: "warning",
+      current: "Mixed/Unknown",
+      autoFixable: false
+    });
+    expect(fontSizeFinding).toMatchObject({
+      severity: "warning",
+      current: "Mixed/Unknown",
+      autoFixable: false
+    });
+  });
+
   it("detects wrong orientation and first-line indent", () => {
     const profile = getProfile("HPC-ND30");
     const snapshot: DocumentSnapshot = {
