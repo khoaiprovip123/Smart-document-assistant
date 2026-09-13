@@ -4,6 +4,7 @@ import { validateSopStructure } from "../validators/sopValidator";
 
 const formatRange = (rule: NumericRule) => `${rule.min}-${rule.max} ${rule.unit}`;
 const normalize = (value?: string) => (value ?? "").trim().toLocaleLowerCase("vi-VN");
+const isHeadingStyle = (style?: string) => /^(?:heading\s*[1-9]|hpc\.heading[1-4])$/i.test((style ?? "").trim());
 
 function marginFinding(
   id: string,
@@ -41,13 +42,40 @@ function marginFinding(
   };
 }
 
+function paragraphNumericFinding(
+  paragraphIndex: number,
+  ruleId: string,
+  title: string,
+  field: Finding["field"],
+  currentPt: number,
+  rule: NumericRule,
+  severity: Exclude<Severity, "critical" | "passed">
+): Finding {
+  const current = rule.unit === "mm" ? pointsToMm(currentPt) : currentPt;
+  const tolerance = rule.unit === "mm" ? 0.3 : 0.1;
+  const ok = inRange(current, rule.min, rule.max, tolerance);
+
+  return {
+    id: `p-${paragraphIndex}-${field}`,
+    ruleId,
+    severity: ok ? "passed" : severity,
+    scope: "paragraph",
+    title: `Đoạn ${paragraphIndex + 1}: ${title}`,
+    message: ok ? `${title} đạt chuẩn.` : `${title} chưa nằm trong ${formatRange(rule)}.`,
+    current: Number(current.toFixed(1)),
+    target: rule.preferred,
+    paragraphIndex,
+    field,
+    autoFixable: !ok
+  };
+}
+
 function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnapshot): Finding[] {
   const findings: Finding[] = [];
 
   snapshot.paragraphs.forEach((paragraph) => {
     if (!paragraph.text.trim()) return;
-    const isHeading = /^heading\s*[1-9]$/i.test(paragraph.style ?? "");
-    if (isHeading) return;
+    if (isHeadingStyle(paragraph.style)) return;
 
     const fontOk = normalize(paragraph.fontName) === normalize(profile.body.fontName);
     findings.push({
@@ -97,6 +125,62 @@ function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnaps
         autoFixable: !alignmentOk
       });
     }
+
+    if (profile.body.firstLineIndentMm && typeof paragraph.firstLineIndentPt === "number") {
+      findings.push(
+        paragraphNumericFinding(
+          paragraph.index,
+          "BODY-FIRST-LINE-INDENT",
+          "Thụt đầu dòng",
+          "firstLineIndent",
+          paragraph.firstLineIndentPt,
+          profile.body.firstLineIndentMm,
+          "warning"
+        )
+      );
+    }
+
+    if (profile.body.spaceBeforePt && typeof paragraph.spaceBeforePt === "number") {
+      findings.push(
+        paragraphNumericFinding(
+          paragraph.index,
+          "BODY-SPACE-BEFORE",
+          "Khoảng cách trước đoạn",
+          "spaceBefore",
+          paragraph.spaceBeforePt,
+          profile.body.spaceBeforePt,
+          "suggestion"
+        )
+      );
+    }
+
+    if (profile.body.spaceAfterPt && typeof paragraph.spaceAfterPt === "number") {
+      findings.push(
+        paragraphNumericFinding(
+          paragraph.index,
+          "BODY-SPACE-AFTER",
+          "Khoảng cách sau đoạn",
+          "spaceAfter",
+          paragraph.spaceAfterPt,
+          profile.body.spaceAfterPt,
+          "suggestion"
+        )
+      );
+    }
+
+    if (profile.body.lineSpacingPt && typeof paragraph.lineSpacingPt === "number") {
+      findings.push(
+        paragraphNumericFinding(
+          paragraph.index,
+          "BODY-LINE-SPACING",
+          "Giãn dòng",
+          "lineSpacing",
+          paragraph.lineSpacingPt,
+          profile.body.lineSpacingPt,
+          "suggestion"
+        )
+      );
+    }
   });
 
   return findings;
@@ -138,6 +222,20 @@ export function evaluateDocument(profile: DocumentRuleProfile, snapshot: Documen
       target: profile.page.paperSize,
       field: "paperSize",
       autoFixable: !paperOk
+    });
+
+    const orientationOk = normalize(page.orientation) === normalize(profile.page.orientation);
+    findings.push({
+      id: "PAGE-ORIENTATION",
+      ruleId: "PAGE-ORIENTATION",
+      severity: orientationOk ? "passed" : "critical",
+      scope: "document",
+      title: "Hướng giấy",
+      message: orientationOk ? "Hướng giấy đạt chuẩn." : "Hướng giấy khác profile.",
+      current: page.orientation || "Unknown",
+      target: profile.page.orientation,
+      field: "orientation",
+      autoFixable: !orientationOk
     });
   } else {
     findings.push({

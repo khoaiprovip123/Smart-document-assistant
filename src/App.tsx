@@ -118,8 +118,11 @@ export default function App() {
     setBusy(true);
     setError(null);
     try {
-      const stylesResult = await ensureHpcStyles();
-      setStatus(`HPC Styles: tạo mới ${stylesResult.created.length}, đã tồn tại ${stylesResult.skipped.length}.`);
+      const stylesResult = await ensureHpcStyles(profile);
+      const conflictText = stylesResult.conflicts.length > 0 ? `, xung đột loại ${stylesResult.conflicts.length}` : "";
+      setStatus(
+        `HPC Styles: tạo mới ${stylesResult.created.length}, cập nhật ${stylesResult.updated.length}${conflictText}.`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tạo HPC Styles.");
     } finally {
