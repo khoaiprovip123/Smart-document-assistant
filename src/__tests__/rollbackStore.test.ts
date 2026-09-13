@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasSameDocumentStructure } from "../services/rollbackStore";
+import { assertRollbackSafe, hasSameDocumentStructure } from "../services/rollbackStore";
 import type { DocumentSnapshot } from "../types";
 
 function snapshot(texts: string[], fontName = "Times New Roman"): DocumentSnapshot {
@@ -21,6 +21,7 @@ describe("rollback document structure guard", () => {
     const current = snapshot(["Đoạn một", "Đoạn hai"], "Times New Roman");
 
     expect(hasSameDocumentStructure(before, current)).toBe(true);
+    expect(() => assertRollbackSafe(before, current)).not.toThrow();
   });
 
   it("rejects rollback after paragraph insertion or deletion", () => {
@@ -28,6 +29,7 @@ describe("rollback document structure guard", () => {
     const current = snapshot(["Đoạn mới", "Đoạn một", "Đoạn hai"]);
 
     expect(hasSameDocumentStructure(before, current)).toBe(false);
+    expect(() => assertRollbackSafe(before, current)).toThrow(/thay đổi/i);
   });
 
   it("rejects rollback after paragraph text changes", () => {
@@ -35,5 +37,6 @@ describe("rollback document structure guard", () => {
     const current = snapshot(["Đoạn một đã sửa", "Đoạn hai"]);
 
     expect(hasSameDocumentStructure(before, current)).toBe(false);
+    expect(() => assertRollbackSafe(before, current)).toThrow(/thay đổi/i);
   });
 });
