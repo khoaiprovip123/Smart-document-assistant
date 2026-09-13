@@ -77,19 +77,24 @@ function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnaps
     if (!paragraph.text.trim()) return;
     if (isHeadingStyle(paragraph.style)) return;
 
-    const fontOk = normalize(paragraph.fontName) === normalize(profile.body.fontName);
+    const hasReadableFontName = Boolean(paragraph.fontName?.trim());
+    const fontOk = hasReadableFontName && normalize(paragraph.fontName) === normalize(profile.body.fontName);
     findings.push({
       id: `p-${paragraph.index}-fontName`,
       ruleId: "BODY-FONT-NAME",
       severity: fontOk ? "passed" : "warning",
       scope: "paragraph",
       title: `Đoạn ${paragraph.index + 1}: Font`,
-      message: fontOk ? "Font đạt chuẩn." : "Font thân bài chưa đúng profile.",
+      message: fontOk
+        ? "Font đạt chuẩn."
+        : hasReadableFontName
+          ? "Font thân bài chưa đúng profile."
+          : "Đoạn có mixed/unknown font; cần kiểm tra thủ công để bảo toàn định dạng cục bộ.",
       current: paragraph.fontName || "Mixed/Unknown",
       target: profile.body.fontName,
       paragraphIndex: paragraph.index,
       field: "fontName",
-      autoFixable: !fontOk
+      autoFixable: hasReadableFontName && !fontOk
     });
 
     if (typeof paragraph.fontSize === "number") {
@@ -106,6 +111,20 @@ function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnaps
         paragraphIndex: paragraph.index,
         field: "fontSize",
         autoFixable: !sizeOk
+      });
+    } else {
+      findings.push({
+        id: `p-${paragraph.index}-fontSize`,
+        ruleId: "BODY-FONT-SIZE",
+        severity: "warning",
+        scope: "paragraph",
+        title: `Đoạn ${paragraph.index + 1}: Cỡ chữ`,
+        message: "Đoạn có mixed/unknown cỡ chữ; cần kiểm tra thủ công để bảo toàn định dạng cục bộ.",
+        current: "Mixed/Unknown",
+        target: profile.body.fontSize.preferred,
+        paragraphIndex: paragraph.index,
+        field: "fontSize",
+        autoFixable: false
       });
     }
 
