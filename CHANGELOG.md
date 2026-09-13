@@ -9,6 +9,7 @@
 - Bổ sung document structure guard cho rollback.
 - Rollback bị chặn nếu số lượng, thứ tự hoặc nội dung paragraph thay đổi sau lần Fix.
 - Bổ sung regression tests cho mixed formatting và rollback safety.
+- Quy trình kiểm chứng Phase 2: TDD RED → GREEN, sau đó chạy lại Build + Unit Tests + Office manifest validation trên HEAD trước khi merge `main`.
 
 ## 0.1.0 - 2026-09-13
 
