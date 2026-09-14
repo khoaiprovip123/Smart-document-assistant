@@ -14,11 +14,9 @@ function finding(severity: QualityFindingV2["severity"], id = severity): Quality
     provenance: {
       sourceId: "SRC",
       sourceTitle: "Source",
-      sourceType: "custom",
+      issuer: "Issuer",
       profileId: "P",
-      profileVersion: "1",
-      profileLayer: "custom",
-      trace: []
+      profileVersion: "1"
     }
   };
 }
