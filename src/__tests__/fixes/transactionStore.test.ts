@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { assertSemanticRollbackSafe, createTransactionStore } from "../../fixes/transactionStore";
-import { createWordCapabilityMatrix } from "../../word/capabilities";
+import { buildWordCapabilityMatrix } from "../../word/capabilities";
 import { createSemanticDocumentSnapshot } from "../../word/documentModel";
 
-const capabilities = createWordCapabilityMatrix({ wordApi: "1.6", wordApiDesktop: "1.4" });
+const capabilities = buildWordCapabilityMatrix(() => true);
 
 function snapshot(text = "Body", tableCount = 1) {
   return createSemanticDocumentSnapshot({
@@ -22,16 +22,16 @@ describe("change transaction store", () => {
   it("keeps multiple immutable transactions in LIFO order", () => {
     const store = createTransactionStore(2);
     const first = snapshot("A");
+    const second = snapshot("B");
     store.record({ id: "tx-1", label: "First", before: first, findingIds: ["f1"] });
-    store.record({ id: "tx-2", label: "Second", before: snapshot("B"), findingIds: ["f2"] });
+    store.record({ id: "tx-2", label: "Second", before: second, findingIds: ["f2"] });
     store.record({ id: "tx-3", label: "Third", before: snapshot("C"), findingIds: ["f3"] });
 
     expect(store.history().map((item) => item.id)).toEqual(["tx-2", "tx-3"]);
     expect(store.peek()?.id).toBe("tx-3");
     expect(store.pop()?.id).toBe("tx-3");
     expect(store.peek()?.id).toBe("tx-2");
-
-    first.paragraphs[0].text = "MUTATED";
+    expect(store.peek()?.before).not.toBe(second);
     expect(store.peek()?.before.paragraphs[0].text).toBe("B");
   });
 
