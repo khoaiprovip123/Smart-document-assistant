@@ -1,4 +1,6 @@
 import type { DocumentRuleProfile, DocumentSnapshot, Finding, ParagraphSnapshot } from "../types";
+import { consumeLatestCompatibilityTransaction, recordCompatibilityTransaction } from "../fixes/compatTransactionSession";
+import { readSemanticDocumentSnapshot } from "../word/semanticWordService";
 import { mmToPoints } from "../utils/units";
 import { assertRollbackSafe, rollbackStore } from "./rollbackStore";
 
@@ -95,6 +97,7 @@ export async function applyFindings(profile: DocumentRuleProfile, findings: Find
   const actionable = findings.filter((finding) => finding.autoFixable);
   if (!actionable.length) return;
 
+  const semanticBefore = await readSemanticDocumentSnapshot();
   const before = await readDocumentSnapshot();
   rollbackStore.save(before);
 
@@ -168,6 +171,12 @@ export async function applyFindings(profile: DocumentRuleProfile, findings: Find
 
     await context.sync();
   });
+
+  recordCompatibilityTransaction({
+    label: `V1 Fix Selected (${actionable.length})`,
+    before: semanticBefore,
+    findingIds: actionable.map((finding) => finding.id)
+  });
 }
 
 export async function rollbackLastChange(): Promise<boolean> {
@@ -214,12 +223,14 @@ export async function rollbackLastChange(): Promise<boolean> {
   });
 
   rollbackStore.clear();
+  consumeLatestCompatibilityTransaction();
   return true;
 }
 
 export async function normalizeSelectedText(profile: DocumentRuleProfile): Promise<void> {
   if (!isWordHost()) throw new Error("Tính năng chỉ hoạt động trong Microsoft Word.");
 
+  const semanticBefore = await readSemanticDocumentSnapshot();
   const before = await readDocumentSnapshot();
   rollbackStore.save(before);
 
@@ -237,6 +248,12 @@ export async function normalizeSelectedText(profile: DocumentRuleProfile): Promi
       }
     });
     await context.sync();
+  });
+
+  recordCompatibilityTransaction({
+    label: "V1 Normalize Selection",
+    before: semanticBefore,
+    findingIds: []
   });
 }
 
