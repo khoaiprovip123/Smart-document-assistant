@@ -15,18 +15,16 @@ function finding(id: string, fixPolicy: FixPolicy): QualityFindingV2 {
     provenance: {
       sourceId: "SRC",
       sourceTitle: "Source",
-      sourceType: "custom",
+      issuer: "Issuer",
       profileId: "P",
-      profileVersion: "1",
-      profileLayer: "custom",
-      trace: []
+      profileVersion: "1"
     }
   };
 }
 
 describe("fix policy enforcement", () => {
   it("distinguishes safe, preview, review, and forbidden policies", () => {
-    expect(getFixDisposition(finding("safe", "safe-auto-fix"))).toBe("apply");
+    expect(getFixDisposition(finding("safe", "auto-safe"))).toBe("apply");
     expect(getFixDisposition(finding("preview", "auto-with-preview"))).toBe("preview");
     expect(getFixDisposition(finding("preview", "auto-with-preview"), { previewApproved: true })).toBe("apply");
     expect(getFixDisposition(finding("review", "review-required"))).toBe("review");
@@ -35,7 +33,7 @@ describe("fix policy enforcement", () => {
 
   it("Fix All Safe includes only safe fixes plus explicitly approved previews", () => {
     const findings = [
-      finding("safe", "safe-auto-fix"),
+      finding("safe", "auto-safe"),
       finding("preview", "auto-with-preview"),
       finding("review", "review-required"),
       finding("never", "never-auto-fix")
