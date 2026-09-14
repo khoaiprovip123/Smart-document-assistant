@@ -16,6 +16,13 @@ describe("M6 release qualification", () => {
     expect(BUILTIN_QA_CORPUS.every((item) => item.artifactPath.startsWith("fixture://"))).toBe(true);
   });
 
+  it("covers administrative, academic, corporate and SOP families in the synthetic manifest", () => {
+    expect(BUILTIN_QA_CORPUS.some((item) => item.family === "administrative")).toBe(true);
+    expect(BUILTIN_QA_CORPUS.some((item) => item.family === "academic")).toBe(true);
+    expect(BUILTIN_QA_CORPUS.some((item) => item.family === "corporate")).toBe(true);
+    expect(BUILTIN_QA_CORPUS.some((item) => item.profile.id === "HPC-SOP-POLICY")).toBe(true);
+  });
+
   it("fails a corpus observation for missing expected findings or forbidden false positives", () => {
     const entry = BUILTIN_QA_CORPUS.find((item) => item.id === "nd30-typography-invalid");
     expect(entry).toBeDefined();
