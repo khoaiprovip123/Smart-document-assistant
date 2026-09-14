@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Ribbon-first Word UX
+
+- Chuyển trải nghiệm chính sang custom tab Word riêng `HPC VĂN BẢN`; không còn đặt command chính trên Home tab.
+- Thêm 8 nhóm Ribbon: KIỂM TRA, SỬA & HOÀN TÁC, ĐỊNH DẠNG, BẢNG, HEADING & MỤC LỤC, TIÊU CHUẨN, PHÁT HÀNH, CÔNG CỤ.
+- Thêm command dispatcher riêng qua `commands.html`/FunctionFile; mọi function command luôn hoàn tất Office event lifecycle kể cả khi action lỗi.
+- Nối 6 thao tác ngắn thành lệnh trực tiếp trên Ribbon:
+  - Hoàn tác HPC.
+  - Chuẩn hóa vùng chọn.
+  - HPC Styles.
+  - Chuẩn hóa bảng.
+  - Đánh số Heading.
+  - Tạo/Cập nhật mục lục.
+- Giữ các luồng cần đọc kết quả/review ở Task Pane: Kiểm tra tài liệu, Sửa lỗi an toàn, Bộ tiêu chuẩn, Trước phát hành và Trung tâm chi tiết.
+- Đổi vai trò Task Pane thành `Trung tâm chi tiết`, Việt hóa các nhãn vận hành chính như Vấn đề, Lịch sử thay đổi, Ma trận phát hành Word Desktop và trạng thái chờ kiểm tra thủ công.
+- Giữ nguyên safety boundary: không auto-run `review-required` / `never-auto-fix`, không bật V2 mutation adapter, không bật Shared Runtime trong phase Ribbon-first đầu tiên.
+- Thêm test cho custom tab, group IDs, direct `ExecuteFunction`, detail `ShowTaskpane`, command registry và event lifecycle.
+- Office manifest validation từng phát hiện resource ID quá dài; đã rút gọn resource keys và xác nhận development/production manifest hợp lệ.
+- Word Desktop production qualification vẫn `PENDING MANUAL` cho tới khi smoke test thật chạy đủ 6 lệnh trực tiếp, Detail Center review flows, auto-open và release checks.
+
 ### Semantic Table Formatting & Persistent Word Mode
 
 - Thay cơ chế chuẩn hóa bảng dùng một alignment chung bằng semantic column alignment:
