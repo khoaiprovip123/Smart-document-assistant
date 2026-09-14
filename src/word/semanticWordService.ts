@@ -33,7 +33,7 @@ export async function readSemanticDocumentSnapshot(): Promise<SemanticDocumentSn
     sections?.load?.("items");
 
     const tables = body.tables;
-    tables.load("items,rowCount,columnCount,style");
+    tables.load("items,rowCount,style,values");
 
     const pictures = body.inlinePictures;
     pictures.load("items,altTextTitle,altTextDescription,hyperlink,width,height");
@@ -140,7 +140,7 @@ export async function readSemanticDocumentSnapshot(): Promise<SemanticDocumentSn
     const tableSnapshots: TableSnapshotV2[] = tables.items.map((table, index) => ({
       index,
       rowCount: table.rowCount,
-      columnCount: table.columnCount,
+      columnCount: table.values?.[0]?.length,
       style: table.style
     }));
 
