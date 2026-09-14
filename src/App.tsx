@@ -130,7 +130,7 @@ export default function App() {
 
       const v2Status = nextV2Report
         ? ` V2: ${nextV2Report.profile.name} — ${nextV2Report.preflight.status}.`
-        : " Profile tùy chỉnh hiện chạy V1 compatibility; chưa có V2 mapping.";
+        : " Bộ tiêu chuẩn tùy chỉnh hiện chạy V1 compatibility; chưa có V2 mapping.";
       setStatus(`Đã kiểm tra ${snapshot.paragraphs.length} đoạn văn theo ${profile.name}.${v2Status}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể kiểm tra tài liệu.");
@@ -161,12 +161,12 @@ export default function App() {
       const restored = await rollbackLastChange();
       if (restored) {
         await scan();
-        setStatus("Đã rollback lần thay đổi HPC gần nhất và kiểm tra lại tài liệu.");
+        setStatus("Đã hoàn tác lần thay đổi HPC gần nhất và kiểm tra lại tài liệu.");
       } else {
-        setStatus("Chưa có snapshot để rollback.");
+        setStatus("Chưa có thay đổi HPC phù hợp để hoàn tác.");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Rollback thất bại.");
+      setError(err instanceof Error ? err.message : "Hoàn tác HPC thất bại.");
       setBusy(false);
     }
   }
@@ -177,7 +177,7 @@ export default function App() {
     try {
       await normalizeSelectedText(profile);
       await scan();
-      setStatus("Đã chuẩn hóa vùng chọn, lưu snapshot rollback và kiểm tra lại.");
+      setStatus("Đã chuẩn hóa vùng chọn, lưu snapshot hoàn tác và kiểm tra lại.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể chuẩn hóa vùng chọn.");
     } finally {
@@ -219,10 +219,10 @@ export default function App() {
       const numbering = await normalizeHeadingNumbering();
       await scan();
       setStatus(
-        `Đã chuẩn hóa numbering cho ${numbering.numbered} heading. Bỏ qua ${numbering.skippedExistingLists} heading đã thuộc list để tránh phá numbering hiện hữu.`
+        `Đã đánh số ${numbering.numbered} Heading. Bỏ qua ${numbering.skippedExistingLists} Heading đã thuộc list để tránh phá numbering hiện hữu.`
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể chuẩn hóa numbering heading.");
+      setError(err instanceof Error ? err.message : "Không thể đánh số Heading.");
     } finally {
       setBusy(false);
     }
@@ -253,15 +253,15 @@ export default function App() {
       const imported = parseRuleProfiles(await file.text());
       const builtInIds = new Set(RULE_PROFILES.map((item) => item.id));
       const collision = imported.find((item) => builtInIds.has(item.id));
-      if (collision) throw new Error(`Profile import trùng ID hệ thống: ${collision.id}.`);
+      if (collision) throw new Error(`Bộ tiêu chuẩn import trùng ID hệ thống: ${collision.id}.`);
       setCustomProfiles(imported);
       setProfileId(imported[0].id);
       setResult(null);
       setV2Report(null);
       setSelected(new Set());
-      setStatus(`Đã nạp ${imported.length} rule profile từ ${file.name}.`);
+      setStatus(`Đã nạp ${imported.length} bộ tiêu chuẩn từ ${file.name}.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể nạp rule profile JSON.");
+      setError(err instanceof Error ? err.message : "Không thể nạp bộ tiêu chuẩn JSON.");
     } finally {
       event.target.value = "";
     }
@@ -271,7 +271,7 @@ export default function App() {
     setError(null);
     try {
       const selectedFinding = await selectFinding(finding);
-      if (!selectedFinding) setStatus("Finding này thuộc cấp tài liệu/cấu trúc nên không có đoạn cụ thể để chọn.");
+      if (!selectedFinding) setStatus("Vấn đề này thuộc cấp tài liệu/cấu trúc nên không có đoạn cụ thể để chọn.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể chuyển tới vị trí lỗi.");
     }
@@ -280,12 +280,12 @@ export default function App() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Title2>HPC Smart Document Assistant</Title2>
-        <Text className={styles.note}>V2 pilot — V1 compatibility + source-backed health, preview và preflight</Text>
+        <Title2>Trung tâm chi tiết</Title2>
+        <Text className={styles.note}>Ribbon-first · Tình trạng tài liệu · Vấn đề · Bộ tiêu chuẩn · Kiểm tra trước phát hành</Text>
       </header>
 
       <Card>
-        <Text weight="semibold">Chuẩn áp dụng</Text>
+        <Text weight="semibold">Bộ tiêu chuẩn</Text>
         <Dropdown
           value={profile.name}
           selectedOptions={[profileId]}
@@ -305,11 +305,11 @@ export default function App() {
           ))}
         </Dropdown>
         <Text size={200} className={styles.note}>{profile.description}</Text>
-        <Text size={200} weight="semibold">Nạp profile JSON tùy chỉnh</Text>
+        <Text size={200} weight="semibold">Nạp bộ tiêu chuẩn JSON tùy chỉnh</Text>
         <input className={styles.fileInput} type="file" accept="application/json,.json" onChange={(event) => void importRuleProfiles(event)} />
         {profile.status === "draft" && (
           <div className={styles.warning}>
-            <Text weight="semibold">Profile DRAFT:</Text>{" "}
+            <Text weight="semibold">Bộ tiêu chuẩn DRAFT:</Text>{" "}
             <Text>chỉ dùng pilot/kiểm thử cho đến khi HPC phê duyệt rule chính thức.</Text>
           </div>
         )}
@@ -317,12 +317,12 @@ export default function App() {
 
       <div className={styles.actions}>
         <Button appearance="primary" onClick={scan} disabled={busy}>Kiểm tra văn bản</Button>
-        <Button onClick={fixSelected} disabled={busy || !result || selected.size === 0}>Sửa mục đã chọn ({selected.size})</Button>
+        <Button onClick={fixSelected} disabled={busy || !result || selected.size === 0}>Sửa vấn đề đã chọn ({selected.size})</Button>
         <Button onClick={formatSelection} disabled={busy}>Chuẩn hóa vùng chọn</Button>
         <Button onClick={normalizeTables} disabled={busy}>Chuẩn hóa bảng</Button>
-        <Button onClick={normalizeNumbering} disabled={busy}>Numbering Heading</Button>
+        <Button onClick={normalizeNumbering} disabled={busy}>Đánh số Heading</Button>
         <Button onClick={manageToc} disabled={busy}>Mục lục</Button>
-        <Button onClick={undo} disabled={busy}>Rollback</Button>
+        <Button onClick={undo} disabled={busy}>Hoàn tác HPC</Button>
         <Button onClick={createStyles} disabled={busy}>Tạo/Cập nhật HPC Styles</Button>
       </div>
 
@@ -334,7 +334,7 @@ export default function App() {
         <>
           <Card>
             <div className={styles.scoreRow}>
-              <Text weight="semibold">Compliance Score V1</Text>
+              <Text weight="semibold">Điểm tuân thủ V1</Text>
               <Title2>{result.score}%</Title2>
             </div>
             <ProgressBar value={result.score / 100} />
@@ -349,7 +349,7 @@ export default function App() {
           {release && (
             <Card>
               <div className={styles.scoreRow}>
-                <Text weight="semibold">Pre-release Check V1</Text>
+                <Text weight="semibold">Kiểm tra trước phát hành V1</Text>
                 <Badge color={release.status === "blocked" ? "danger" : release.status === "review" ? "warning" : "success"}>
                   {release.label}
                 </Badge>
@@ -361,11 +361,11 @@ export default function App() {
           {v2Report && (
             <Card>
               <div className={styles.scoreRow}>
-                <Text weight="semibold">Document Health V2</Text>
+                <Text weight="semibold">Tình trạng tài liệu V2</Text>
                 <Badge color={preflightColor(v2Report.preflight.status)}>{v2Report.preflight.status}</Badge>
               </div>
               <Text size={200}>
-                {v2Report.profile.name} · {v2Report.profile.status.toUpperCase()} · {v2Report.findings.length} finding
+                {v2Report.profile.name} · {v2Report.profile.status.toUpperCase()} · {v2Report.findings.length} vấn đề
               </Text>
               <div className={styles.counts}>
                 <Badge color="danger">Critical {v2Report.health.bySeverity.critical}</Badge>
@@ -374,21 +374,21 @@ export default function App() {
                 <Badge appearance="outline">Info {v2Report.health.bySeverity.info}</Badge>
               </div>
               <div className={styles.counts}>
-                <Badge appearance="outline">Safe auto {v2Report.health.fixability.safeAuto}</Badge>
-                <Badge appearance="outline">Preview {v2Report.health.fixability.previewRequired}</Badge>
-                <Badge appearance="outline">Review {v2Report.health.fixability.reviewRequired}</Badge>
-                <Badge appearance="outline">Never auto {v2Report.health.fixability.forbidden}</Badge>
+                <Badge appearance="outline">Tự sửa an toàn {v2Report.health.fixability.safeAuto}</Badge>
+                <Badge appearance="outline">Cần xem trước {v2Report.health.fixability.previewRequired}</Badge>
+                <Badge appearance="outline">Cần xem xét {v2Report.health.fixability.reviewRequired}</Badge>
+                <Badge appearance="outline">Không tự sửa {v2Report.health.fixability.forbidden}</Badge>
               </div>
               {v2Report.missingCapabilities.length > 0 && (
                 <div className={styles.warning}>
-                  <Text size={200}>Capability gap: {v2Report.missingCapabilities.join(", ")}</Text>
+                  <Text size={200}>Thiếu khả năng Word: {v2Report.missingCapabilities.join(", ")}</Text>
                 </div>
               )}
               <Text size={200} className={styles.note}>
-                V2 preview chỉ hiển thị thay đổi source-backed trong pilot; mutation Word vẫn dùng V1 compatibility cho tới smoke test adapter V2.
+                V2 chỉ hiển thị xem trước thay đổi có nguồn trong pilot; thao tác sửa Word vẫn dùng V1 compatibility cho tới smoke test adapter V2.
               </Text>
-              <Text weight="semibold">V2 Fix Preview</Text>
-              {v2Report.preview.length === 0 && <Text size={200}>Không có thay đổi cần preview theo rule V2 hiện tại.</Text>}
+              <Text weight="semibold">Xem trước sửa lỗi V2</Text>
+              {v2Report.preview.length === 0 && <Text size={200}>Không có thay đổi cần xem trước theo rule V2 hiện tại.</Text>}
               {v2Report.preview.slice(0, 6).map((item) => (
                 <div className={styles.previewItem} key={item.findingId}>
                   <div className={styles.counts}>
@@ -403,7 +403,7 @@ export default function App() {
                 </div>
               ))}
               {v2Report.preview.length > 6 && (
-                <Text size={200} className={styles.note}>Còn {v2Report.preview.length - 6} finding V2 khác.</Text>
+                <Text size={200} className={styles.note}>Còn {v2Report.preview.length - 6} vấn đề V2 khác.</Text>
               )}
             </Card>
           )}
@@ -454,7 +454,7 @@ export default function App() {
                       </Button>
                     )}
                     {!finding.autoFixable && finding.severity !== "passed" && (
-                      <Text size={200} className={styles.note}>Manual review</Text>
+                      <Text size={200} className={styles.note}>Cần xem thủ công</Text>
                     )}
                   </div>
                 </div>
