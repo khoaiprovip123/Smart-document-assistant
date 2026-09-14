@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Thêm kiến trúc V2 `Document Standards Platform`: chuẩn hóa theo nguồn/quy định, profile phân tầng, semantic document model, safe-fix transaction và preflight release gate.
+- Thêm `docs/standards/SOURCE_CATALOG.md` ghi nhận nguồn chính thức/uy tín đã kiểm chứng cho ND30, HCMUT, Harvard GSAS, IEEE, ISO 690, ISO 2145, Microsoft Accessibility, Chicago, MLA và ICMJE.
+- Thêm V2 Master Plan với task ID, dependency, P0/P1/P2, acceptance criteria và release gates.
+- Thêm executable plan `V2 M1 Standards Foundation` với file path, interface, TDD RED→GREEN, code skeleton và exit gate.
 - Chờ Word Desktop smoke test của release candidate trên tài liệu pilot thực tế.
 - `HPC-INTERNAL` và `HPC-SOP` vẫn cần HPC phê duyệt rule nghiệp vụ trước production.
 
