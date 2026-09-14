@@ -22,7 +22,7 @@
     "react-dom": "19.1.1"
   },
   "devDependencies": {
-    "@types/node": "22.10.0",
+    "@types/node": "22.12.0",
     "@types/office-js": "1.0.609",
     "@types/react": "19.1.12",
     "@types/react-dom": "19.1.9",
