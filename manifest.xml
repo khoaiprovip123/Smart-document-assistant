@@ -13,9 +13,7 @@
   <IconUrl DefaultValue="https://localhost:3000/assets/icon-32.png" />
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://github.com/khoaiprovip123/Smart-document-assistant" />
-  <AppDomains>
-    <AppDomain>https://localhost:3000</AppDomain>
-  </AppDomains>
+  <AppDomains><AppDomain>https://localhost:3000</AppDomain></AppDomains>
   <Hosts><Host Name="Document" /></Hosts>
   <DefaultSettings><SourceLocation DefaultValue="https://localhost:3000/taskpane.html" /></DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
@@ -65,8 +63,8 @@
                 <Label resid="HPC.Group.Format.Label" />
                 <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
                 <Control xsi:type="Button" id="HPC.Format.NormalizeSelection">
-                  <Label resid="HPC.Format.NormalizeSelection.Label" />
-                  <Supertip><Title resid="HPC.Format.NormalizeSelection.Label" /><Description resid="HPC.Format.NormalizeSelection.Desc" /></Supertip>
+                  <Label resid="HPC.Fmt.Norm.Label" />
+                  <Supertip><Title resid="HPC.Fmt.Norm.Label" /><Description resid="HPC.Fmt.Norm.Desc" /></Supertip>
                   <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
                   <Action xsi:type="ExecuteFunction"><FunctionName>hpcNormalizeSelection</FunctionName></Action>
                 </Control>
@@ -93,8 +91,8 @@
                 <Label resid="HPC.Group.Structure.Label" />
                 <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
                 <Control xsi:type="Button" id="HPC.Structure.NumberHeadings">
-                  <Label resid="HPC.Structure.NumberHeadings.Label" />
-                  <Supertip><Title resid="HPC.Structure.NumberHeadings.Label" /><Description resid="HPC.Structure.NumberHeadings.Desc" /></Supertip>
+                  <Label resid="HPC.Str.Num.Label" />
+                  <Supertip><Title resid="HPC.Str.Num.Label" /><Description resid="HPC.Str.Num.Desc" /></Supertip>
                   <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
                   <Action xsi:type="ExecuteFunction"><FunctionName>hpcNumberHeadings</FunctionName></Action>
                 </Control>
@@ -165,14 +163,13 @@
         <bt:String id="HPC.Group.Standards.Label" DefaultValue="TIÊU CHUẨN" />
         <bt:String id="HPC.Group.Release.Label" DefaultValue="PHÁT HÀNH" />
         <bt:String id="HPC.Group.Tools.Label" DefaultValue="CÔNG CỤ" />
-
         <bt:String id="HPC.Check.Open.Label" DefaultValue="Kiểm tra tài liệu" />
         <bt:String id="HPC.Fix.Open.Label" DefaultValue="Sửa lỗi an toàn" />
         <bt:String id="HPC.Fix.Rollback.Label" DefaultValue="Hoàn tác HPC" />
-        <bt:String id="HPC.Format.NormalizeSelection.Label" DefaultValue="Chuẩn hóa vùng chọn" />
+        <bt:String id="HPC.Fmt.Norm.Label" DefaultValue="Chuẩn hóa vùng chọn" />
         <bt:String id="HPC.Format.EnsureStyles.Label" DefaultValue="HPC Styles" />
         <bt:String id="HPC.Table.Standardize.Label" DefaultValue="Chuẩn hóa bảng" />
-        <bt:String id="HPC.Structure.NumberHeadings.Label" DefaultValue="Đánh số Heading" />
+        <bt:String id="HPC.Str.Num.Label" DefaultValue="Đánh số Heading" />
         <bt:String id="HPC.Structure.ManageToc.Label" DefaultValue="Tạo/Cập nhật mục lục" />
         <bt:String id="HPC.Standards.Open.Label" DefaultValue="Bộ tiêu chuẩn" />
         <bt:String id="HPC.Release.Open.Label" DefaultValue="Trước phát hành" />
@@ -182,10 +179,10 @@
         <bt:String id="HPC.Check.Open.Desc" DefaultValue="Kiểm tra tài liệu và xem các vấn đề cần xử lý." />
         <bt:String id="HPC.Fix.Open.Desc" DefaultValue="Xem trước và áp dụng các sửa lỗi an toàn." />
         <bt:String id="HPC.Fix.Rollback.Desc" DefaultValue="Hoàn tác lần thay đổi HPC gần nhất nếu cấu trúc tài liệu vẫn an toàn." />
-        <bt:String id="HPC.Format.NormalizeSelection.Desc" DefaultValue="Chuẩn hóa định dạng vùng đang chọn theo profile HPC-ND30 mặc định của Ribbon pilot." />
+        <bt:String id="HPC.Fmt.Norm.Desc" DefaultValue="Chuẩn hóa định dạng vùng đang chọn theo profile HPC-ND30 mặc định của Ribbon pilot." />
         <bt:String id="HPC.Format.EnsureStyles.Desc" DefaultValue="Tạo hoặc cập nhật các HPC Styles dùng cho tài liệu." />
         <bt:String id="HPC.Table.Standardize.Desc" DefaultValue="Chuẩn hóa bảng theo kiểu dữ liệu từng cột; cột mơ hồ được giữ nguyên." />
-        <bt:String id="HPC.Structure.NumberHeadings.Desc" DefaultValue="Chuẩn hóa numbering Heading 1-4 và bỏ qua heading đã thuộc list." />
+        <bt:String id="HPC.Str.Num.Desc" DefaultValue="Chuẩn hóa numbering Heading 1-4 và bỏ qua heading đã thuộc list." />
         <bt:String id="HPC.Structure.ManageToc.Desc" DefaultValue="Cập nhật mục lục hiện có hoặc chèn mục lục tại vị trí con trỏ khi Word hỗ trợ." />
         <bt:String id="HPC.Standards.Open.Desc" DefaultValue="Chọn và quản lý bộ tiêu chuẩn áp dụng cho tài liệu." />
         <bt:String id="HPC.Release.Open.Desc" DefaultValue="Kiểm tra tình trạng tài liệu trước khi phát hành." />
