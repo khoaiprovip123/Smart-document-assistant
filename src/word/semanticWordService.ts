@@ -33,7 +33,7 @@ export async function readSemanticDocumentSnapshot(): Promise<SemanticDocumentSn
     sections?.load?.("items");
 
     const tables = body.tables;
-    tables.load("items,rowCount,style,values");
+    tables.load("items,rowCount,style,values,horizontalAlignment");
 
     const pictures = body.inlinePictures;
     pictures.load("items,altTextTitle,altTextDescription,hyperlink,width,height");
@@ -141,7 +141,9 @@ export async function readSemanticDocumentSnapshot(): Promise<SemanticDocumentSn
       index,
       rowCount: table.rowCount,
       columnCount: table.values?.[0]?.length,
-      style: table.style
+      style: table.style,
+      horizontalAlignment: table.horizontalAlignment === undefined ? undefined : String(table.horizontalAlignment),
+      values: table.values
     }));
 
     const fieldSnapshots: FieldSnapshotV2[] = (fields?.items ?? []).map((field: any, index: number) => ({

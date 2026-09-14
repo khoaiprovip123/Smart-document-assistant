@@ -109,6 +109,8 @@ export interface TableSnapshotV2 {
   columnCount?: number;
   style?: string;
   headerRowCount?: number;
+  horizontalAlignment?: string;
+  values?: readonly (readonly string[])[];
 }
 
 export interface SemanticDocumentSnapshot {
@@ -149,7 +151,12 @@ export function createSemanticDocumentSnapshot(input: SemanticDocumentSnapshotIn
     runs: paragraph.runs ? frozenArray(paragraph.runs, (run) => ({ ...run })) : undefined,
     semantic: cloneSemantic(paragraph.semantic)
   }));
-  const tables = frozenArray(input.tables, (table) => ({ ...table }));
+  const tables = frozenArray(input.tables, (table) => ({
+    ...table,
+    values: table.values
+      ? Object.freeze(table.values.map((row) => Object.freeze([...row])))
+      : undefined
+  }));
   const fields = frozenArray(input.fields, (field) => ({ ...field }));
   const inlinePictures = frozenArray(input.inlinePictures, (picture) => ({ ...picture }));
   const comments = frozenArray(input.comments, (comment) => ({ ...comment }));

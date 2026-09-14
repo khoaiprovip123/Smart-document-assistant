@@ -12,6 +12,7 @@ export type QualityRequirement =
   | { kind: "structure-required-heading"; text: string }
   | { kind: "heading-max-level-jump"; maxJump: number }
   | { kind: "table-require-header-row" }
+  | { kind: "table-semantic-alignment"; minimumConfidence?: number }
   | { kind: "text-no-double-spaces" }
   | { kind: "text-punctuation-spacing" }
   | { kind: "release-no-comments" }
