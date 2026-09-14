@@ -15,6 +15,7 @@ import {
 } from "@fluentui/react-components";
 import { RULE_PROFILES, getProfile } from "./config/rules";
 import { parseRuleProfiles } from "./config/profileLoader";
+import { createBuiltinDomainRegistry } from "./domains/builtinDomainRegistry";
 import { evaluateDocument } from "./rules/ruleEngine";
 import {
   applyFindings,
@@ -29,7 +30,11 @@ import { normalizeHeadingNumbering } from "./services/headingNumberingService";
 import { insertOrUpdateTableOfContents } from "./services/tocService";
 import { evaluateReleaseReadiness } from "./validators/preReleaseValidator";
 import { filterFindings, type FindingFilter } from "./ui/findingFilters";
+import { readSemanticDocumentSnapshot } from "./word/semanticWordService";
+import { evaluateV2Quality, resolveLegacyProfileRef, type V2QualityReport } from "./v2/workflow";
 import type { DocumentCheckResult, DocumentRuleProfile, Finding } from "./types";
+
+const V2_REGISTRY = createBuiltinDomainRegistry();
 
 const useStyles = makeStyles({
   page: { padding: "16px", display: "flex", flexDirection: "column", gap: "12px" },
@@ -47,6 +52,13 @@ const useStyles = makeStyles({
   },
   findingBody: { display: "flex", flexDirection: "column", gap: "4px" },
   findingActions: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" },
+  previewItem: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    padding: "8px 0",
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`
+  },
   error: { padding: "10px", borderRadius: "6px", background: tokens.colorPaletteRedBackground1 },
   warning: { padding: "10px", borderRadius: "6px", background: tokens.colorPaletteYellowBackground1 },
   note: { color: tokens.colorNeutralForeground3 },
@@ -60,11 +72,28 @@ const severityColor = (finding: Finding): "danger" | "warning" | "informative" |
   return "success";
 };
 
+const preflightColor = (status: V2QualityReport["preflight"]["status"]): "danger" | "warning" | "success" => {
+  if (status === "BLOCKED") return "danger";
+  if (status === "REVIEW_REQUIRED") return "warning";
+  return "success";
+};
+
+const formatValue = (value: unknown): string => {
+  if (value === undefined) return "-";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return String(value);
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+};
+
 export default function App() {
   const styles = useStyles();
   const [profileId, setProfileId] = useState("HPC-ND30");
   const [customProfiles, setCustomProfiles] = useState<DocumentRuleProfile[]>([]);
   const [result, setResult] = useState<DocumentCheckResult | null>(null);
+  const [v2Report, setV2Report] = useState<V2QualityReport | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FindingFilter>("all");
   const [busy, setBusy] = useState(false);
@@ -90,7 +119,19 @@ export default function App() {
       setSelected(
         new Set(next.findings.filter((finding) => finding.autoFixable && finding.severity !== "passed").map((f) => f.id))
       );
-      setStatus(`Đã kiểm tra ${snapshot.paragraphs.length} đoạn văn theo ${profile.name}.`);
+
+      const v2Ref = resolveLegacyProfileRef(profile.id);
+      let nextV2Report: V2QualityReport | null = null;
+      if (v2Ref) {
+        const semanticSnapshot = await readSemanticDocumentSnapshot();
+        nextV2Report = evaluateV2Quality(V2_REGISTRY, v2Ref, semanticSnapshot);
+      }
+      setV2Report(nextV2Report);
+
+      const v2Status = nextV2Report
+        ? ` V2: ${nextV2Report.profile.name} — ${nextV2Report.preflight.status}.`
+        : " Profile tùy chỉnh hiện chạy V1 compatibility; chưa có V2 mapping.";
+      setStatus(`Đã kiểm tra ${snapshot.paragraphs.length} đoạn văn theo ${profile.name}.${v2Status}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể kiểm tra tài liệu.");
     } finally {
@@ -216,6 +257,7 @@ export default function App() {
       setCustomProfiles(imported);
       setProfileId(imported[0].id);
       setResult(null);
+      setV2Report(null);
       setSelected(new Set());
       setStatus(`Đã nạp ${imported.length} rule profile từ ${file.name}.`);
     } catch (err) {
@@ -239,7 +281,7 @@ export default function App() {
     <main className={styles.page}>
       <header className={styles.header}>
         <Title2>HPC Smart Document Assistant</Title2>
-        <Text className={styles.note}>v1 RC — Scan → Review → Safe Fix → Rollback → Pre-release</Text>
+        <Text className={styles.note}>V2 pilot — V1 compatibility + source-backed health, preview và preflight</Text>
       </header>
 
       <Card>
@@ -251,6 +293,7 @@ export default function App() {
             const next = String(data.optionValue);
             setProfileId(next);
             setResult(null);
+            setV2Report(null);
             setSelected(new Set());
             setFilter("all");
           }}
@@ -291,7 +334,7 @@ export default function App() {
         <>
           <Card>
             <div className={styles.scoreRow}>
-              <Text weight="semibold">Compliance Score</Text>
+              <Text weight="semibold">Compliance Score V1</Text>
               <Title2>{result.score}%</Title2>
             </div>
             <ProgressBar value={result.score / 100} />
@@ -306,12 +349,62 @@ export default function App() {
           {release && (
             <Card>
               <div className={styles.scoreRow}>
-                <Text weight="semibold">Pre-release Check</Text>
+                <Text weight="semibold">Pre-release Check V1</Text>
                 <Badge color={release.status === "blocked" ? "danger" : release.status === "review" ? "warning" : "success"}>
                   {release.label}
                 </Badge>
               </div>
               <Text size={200}>{release.message}</Text>
+            </Card>
+          )}
+
+          {v2Report && (
+            <Card>
+              <div className={styles.scoreRow}>
+                <Text weight="semibold">Document Health V2</Text>
+                <Badge color={preflightColor(v2Report.preflight.status)}>{v2Report.preflight.status}</Badge>
+              </div>
+              <Text size={200}>
+                {v2Report.profile.name} · {v2Report.profile.status.toUpperCase()} · {v2Report.findings.length} finding
+              </Text>
+              <div className={styles.counts}>
+                <Badge color="danger">Critical {v2Report.health.bySeverity.critical}</Badge>
+                <Badge color="warning">Warning {v2Report.health.bySeverity.warning}</Badge>
+                <Badge color="informative">Suggestion {v2Report.health.bySeverity.suggestion}</Badge>
+                <Badge appearance="outline">Info {v2Report.health.bySeverity.info}</Badge>
+              </div>
+              <div className={styles.counts}>
+                <Badge appearance="outline">Safe auto {v2Report.health.fixability.safeAuto}</Badge>
+                <Badge appearance="outline">Preview {v2Report.health.fixability.previewRequired}</Badge>
+                <Badge appearance="outline">Review {v2Report.health.fixability.reviewRequired}</Badge>
+                <Badge appearance="outline">Never auto {v2Report.health.fixability.forbidden}</Badge>
+              </div>
+              {v2Report.missingCapabilities.length > 0 && (
+                <div className={styles.warning}>
+                  <Text size={200}>Capability gap: {v2Report.missingCapabilities.join(", ")}</Text>
+                </div>
+              )}
+              <Text size={200} className={styles.note}>
+                V2 preview chỉ hiển thị thay đổi source-backed trong pilot; mutation Word vẫn dùng V1 compatibility cho tới smoke test adapter V2.
+              </Text>
+              <Text weight="semibold">V2 Fix Preview</Text>
+              {v2Report.preview.length === 0 && <Text size={200}>Không có thay đổi cần preview theo rule V2 hiện tại.</Text>}
+              {v2Report.preview.slice(0, 6).map((item) => (
+                <div className={styles.previewItem} key={item.findingId}>
+                  <div className={styles.counts}>
+                    <Badge appearance="outline">{item.disposition}</Badge>
+                    <Text weight="semibold">{item.title}</Text>
+                  </div>
+                  <Text size={200}>{item.message}</Text>
+                  <Text size={200} className={styles.note}>
+                    Hiện tại: {formatValue(item.current)} → Chuẩn: {formatValue(item.expected)}
+                  </Text>
+                  <Text size={200} className={styles.note}>Nguồn: {item.sourceLabel}</Text>
+                </div>
+              ))}
+              {v2Report.preview.length > 6 && (
+                <Text size={200} className={styles.note}>Còn {v2Report.preview.length - 6} finding V2 khác.</Text>
+              )}
             </Card>
           )}
 
