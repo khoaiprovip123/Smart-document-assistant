@@ -10,7 +10,11 @@ export function evaluateTypography(context: QualityContext): QualityFindingV2[] 
   for (const resolvedRule of context.profile.rules.values()) {
     if (!isQualityRequirement(resolvedRule.requirement)) continue;
     const requirement = resolvedRule.requirement;
-    if (!requirement.kind.startsWith("typography-")) continue;
+    if (
+      requirement.kind !== "typography-font" &&
+      requirement.kind !== "typography-size-range" &&
+      requirement.kind !== "typography-alignment"
+    ) continue;
 
     for (const paragraph of context.document.paragraphs) {
       const role = paragraph.semantic?.role;
@@ -44,16 +48,14 @@ export function evaluateTypography(context: QualityContext): QualityFindingV2[] 
         continue;
       }
 
-      if (requirement.kind === "typography-alignment") {
-        if (paragraph.alignment === undefined) continue;
-        if (normalize(paragraph.alignment) !== normalize(requirement.expected)) {
-          findings.push(createQualityFinding(context, resolvedRule, {
-            message: `Căn lề của đoạn ${paragraph.index + 1} không đúng profile.`,
-            current: paragraph.alignment,
-            expected: requirement.expected,
-            location
-          }));
-        }
+      if (paragraph.alignment === undefined) continue;
+      if (normalize(paragraph.alignment) !== normalize(requirement.expected)) {
+        findings.push(createQualityFinding(context, resolvedRule, {
+          message: `Căn lề của đoạn ${paragraph.index + 1} không đúng profile.`,
+          current: paragraph.alignment,
+          expected: requirement.expected,
+          location
+        }));
       }
     }
   }
