@@ -1,4 +1,4 @@
-import type { DocumentRuleProfile } from "../types";
+import type { DocumentRuleProfile, ParagraphRuleSet } from "../types";
 import { mmToPoints } from "../utils/units";
 
 type HpcStyleType = "Paragraph" | "Table";
@@ -13,47 +13,121 @@ export interface HpcStyleDefinition {
   spaceBeforePt?: number;
   spaceAfterPt?: number;
   lineSpacingPt?: number;
+  bold?: boolean;
+  italic?: boolean;
 }
 
-const STYLE_BLUEPRINTS: ReadonlyArray<{ name: string; type: HpcStyleType }> = [
-  { name: "HPC.Normal", type: "Paragraph" },
-  { name: "HPC.Title", type: "Paragraph" },
-  { name: "HPC.SubTitle", type: "Paragraph" },
-  { name: "HPC.Heading1", type: "Paragraph" },
-  { name: "HPC.Heading2", type: "Paragraph" },
-  { name: "HPC.Heading3", type: "Paragraph" },
-  { name: "HPC.Heading4", type: "Paragraph" },
-  { name: "HPC.Table", type: "Table" },
-  { name: "HPC.TableHeader", type: "Paragraph" },
-  { name: "HPC.Caption", type: "Paragraph" },
-  { name: "HPC.Note", type: "Paragraph" },
-  { name: "HPC.Signature", type: "Paragraph" },
-  { name: "HPC.Recipient", type: "Paragraph" },
-  { name: "HPC.Appendix", type: "Paragraph" }
-];
+function fromParagraphRule(name: string, rule: ParagraphRuleSet, overrides: Partial<HpcStyleDefinition> = {}): HpcStyleDefinition {
+  return {
+    name,
+    type: "Paragraph",
+    fontName: rule.fontName,
+    fontSize: rule.fontSize.preferred,
+    alignment: rule.alignment,
+    firstLineIndentPt: rule.firstLineIndentMm ? mmToPoints(rule.firstLineIndentMm.preferred) : undefined,
+    spaceBeforePt: rule.spaceBeforePt?.preferred,
+    spaceAfterPt: rule.spaceAfterPt?.preferred,
+    lineSpacingPt: rule.lineSpacingPt?.preferred,
+    bold: rule.bold,
+    italic: rule.italic,
+    ...overrides
+  };
+}
 
 export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyleDefinition[] {
-  return STYLE_BLUEPRINTS.map((blueprint) => {
-    const shared: HpcStyleDefinition = {
-      name: blueprint.name,
-      type: blueprint.type,
-      fontName: profile.body.fontName
-    };
+  const heading1 = profile.headings?.[1] ?? profile.body;
+  const heading2 = profile.headings?.[2] ?? heading1;
+  const heading3 = profile.headings?.[3] ?? heading2;
+  const heading4 = profile.headings?.[4] ?? heading3;
 
-    if (blueprint.name !== "HPC.Normal") return shared;
-
-    return {
-      ...shared,
-      fontSize: profile.body.fontSize.preferred,
-      alignment: profile.body.alignment,
-      firstLineIndentPt: profile.body.firstLineIndentMm
-        ? mmToPoints(profile.body.firstLineIndentMm.preferred)
-        : undefined,
-      spaceBeforePt: profile.body.spaceBeforePt?.preferred,
-      spaceAfterPt: profile.body.spaceAfterPt?.preferred,
-      lineSpacingPt: profile.body.lineSpacingPt?.preferred
-    };
-  });
+  return [
+    fromParagraphRule("HPC.Normal", profile.body),
+    {
+      name: "HPC.Title",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 16,
+      alignment: "Centered",
+      firstLineIndentPt: 0,
+      spaceBeforePt: 0,
+      spaceAfterPt: 6,
+      bold: true
+    },
+    {
+      name: "HPC.SubTitle",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 14,
+      alignment: "Centered",
+      firstLineIndentPt: 0,
+      spaceBeforePt: 0,
+      spaceAfterPt: 6,
+      italic: true
+    },
+    fromParagraphRule("HPC.Heading1", heading1),
+    fromParagraphRule("HPC.Heading2", heading2),
+    fromParagraphRule("HPC.Heading3", heading3),
+    fromParagraphRule("HPC.Heading4", heading4),
+    {
+      name: "HPC.Table",
+      type: "Table",
+      fontName: profile.body.fontName,
+      fontSize: 12
+    },
+    {
+      name: "HPC.TableHeader",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 12,
+      alignment: "Centered",
+      firstLineIndentPt: 0,
+      bold: true
+    },
+    {
+      name: "HPC.Caption",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 12,
+      alignment: "Centered",
+      firstLineIndentPt: 0,
+      italic: true
+    },
+    {
+      name: "HPC.Note",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 11,
+      alignment: "Left",
+      firstLineIndentPt: 0,
+      italic: true
+    },
+    {
+      name: "HPC.Signature",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 13,
+      alignment: "Centered",
+      firstLineIndentPt: 0,
+      bold: true
+    },
+    {
+      name: "HPC.Recipient",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 11,
+      alignment: "Left",
+      firstLineIndentPt: 0
+    },
+    {
+      name: "HPC.Appendix",
+      type: "Paragraph",
+      fontName: profile.body.fontName,
+      fontSize: 14,
+      alignment: "Centered",
+      firstLineIndentPt: 0,
+      bold: true
+    }
+  ];
 }
 
 function applyStyleDefinition(style: Word.Style, definition: HpcStyleDefinition): void {
@@ -62,6 +136,8 @@ function applyStyleDefinition(style: Word.Style, definition: HpcStyleDefinition)
   style.visibility = true;
 
   if (definition.fontSize !== undefined) style.font.size = definition.fontSize;
+  if (definition.bold !== undefined) style.font.bold = definition.bold;
+  if (definition.italic !== undefined) style.font.italic = definition.italic;
   if (definition.type !== "Paragraph") return;
 
   if (definition.alignment !== undefined) style.paragraphFormat.alignment = definition.alignment;

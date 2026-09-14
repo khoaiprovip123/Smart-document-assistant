@@ -13,6 +13,13 @@ function pageSetupSupported(): boolean {
   );
 }
 
+function listMetadataSupported(): boolean {
+  return (
+    typeof Office !== "undefined" &&
+    Office.context?.requirements?.isSetSupported("WordApi", "1.3") === true
+  );
+}
+
 export async function readDocumentSnapshot(): Promise<DocumentSnapshot> {
   if (!isWordHost()) {
     throw new Error("HPC Smart Document Assistant phải được chạy trong Microsoft Word.");
@@ -37,18 +44,29 @@ export async function readDocumentSnapshot(): Promise<DocumentSnapshot> {
 
     await context.sync();
 
-    const paragraphSnapshots: ParagraphSnapshot[] = paragraphs.items.map((paragraph, index) => ({
-      index,
-      text: paragraph.text,
-      style: paragraph.style,
-      fontName: paragraph.font.name || undefined,
-      fontSize: typeof paragraph.font.size === "number" ? paragraph.font.size : undefined,
-      alignment: String(paragraph.alignment),
-      firstLineIndentPt: paragraph.firstLineIndent,
-      spaceBeforePt: paragraph.spaceBefore,
-      spaceAfterPt: paragraph.spaceAfter,
-      lineSpacingPt: paragraph.lineSpacing
-    }));
+    const listItems = listMetadataSupported() ? paragraphs.items.map((paragraph) => paragraph.listItemOrNullObject) : [];
+    if (listItems.length > 0) {
+      listItems.forEach((item) => item.load("isNullObject,level,listString"));
+      await context.sync();
+    }
+
+    const paragraphSnapshots: ParagraphSnapshot[] = paragraphs.items.map((paragraph, index) => {
+      const listItem = listItems[index];
+      return {
+        index,
+        text: paragraph.text,
+        style: paragraph.style,
+        fontName: paragraph.font.name || undefined,
+        fontSize: typeof paragraph.font.size === "number" ? paragraph.font.size : undefined,
+        alignment: String(paragraph.alignment),
+        firstLineIndentPt: paragraph.firstLineIndent,
+        spaceBeforePt: paragraph.spaceBefore,
+        spaceAfterPt: paragraph.spaceAfter,
+        lineSpacingPt: paragraph.lineSpacing,
+        listLevel: listItem && !listItem.isNullObject ? listItem.level : undefined,
+        listString: listItem && !listItem.isNullObject ? listItem.listString : undefined
+      };
+    });
 
     return {
       supportsPageSetup,
@@ -118,27 +136,32 @@ export async function applyFindings(profile: DocumentRuleProfile, findings: Find
 
       switch (finding.field) {
         case "fontName":
-          paragraph.font.name = profile.body.fontName;
+          paragraph.font.name = finding.fix?.fontName ?? profile.body.fontName;
           break;
         case "fontSize":
-          paragraph.font.size = profile.body.fontSize.preferred;
+          paragraph.font.size = finding.fix?.fontSize ?? profile.body.fontSize.preferred;
           break;
         case "alignment":
-          paragraph.alignment = profile.body.alignment;
+          paragraph.alignment = (finding.fix?.alignment ?? profile.body.alignment) as Word.Alignment;
           break;
         case "firstLineIndent":
-          if (profile.body.firstLineIndentMm) {
+          if (finding.fix?.firstLineIndentPt !== undefined) {
+            paragraph.firstLineIndent = finding.fix.firstLineIndentPt;
+          } else if (profile.body.firstLineIndentMm) {
             paragraph.firstLineIndent = mmToPoints(profile.body.firstLineIndentMm.preferred);
           }
           break;
         case "spaceBefore":
-          if (profile.body.spaceBeforePt) paragraph.spaceBefore = profile.body.spaceBeforePt.preferred;
+          if (finding.fix?.spaceBeforePt !== undefined) paragraph.spaceBefore = finding.fix.spaceBeforePt;
+          else if (profile.body.spaceBeforePt) paragraph.spaceBefore = profile.body.spaceBeforePt.preferred;
           break;
         case "spaceAfter":
-          if (profile.body.spaceAfterPt) paragraph.spaceAfter = profile.body.spaceAfterPt.preferred;
+          if (finding.fix?.spaceAfterPt !== undefined) paragraph.spaceAfter = finding.fix.spaceAfterPt;
+          else if (profile.body.spaceAfterPt) paragraph.spaceAfter = profile.body.spaceAfterPt.preferred;
           break;
         case "lineSpacing":
-          if (profile.body.lineSpacingPt) paragraph.lineSpacing = profile.body.lineSpacingPt.preferred;
+          if (finding.fix?.lineSpacingPt !== undefined) paragraph.lineSpacing = finding.fix.lineSpacingPt;
+          else if (profile.body.lineSpacingPt) paragraph.lineSpacing = profile.body.lineSpacingPt.preferred;
           break;
       }
     }
@@ -191,6 +214,9 @@ export async function rollbackLastChange(): Promise<boolean> {
 export async function normalizeSelectedText(profile: DocumentRuleProfile): Promise<void> {
   if (!isWordHost()) throw new Error("Tính năng chỉ hoạt động trong Microsoft Word.");
 
+  const before = await readDocumentSnapshot();
+  rollbackStore.save(before);
+
   await Word.run(async (context) => {
     const range = context.document.getSelection();
     range.font.name = profile.body.fontName;
@@ -200,7 +226,26 @@ export async function normalizeSelectedText(profile: DocumentRuleProfile): Promi
     await context.sync();
     paragraphs.items.forEach((paragraph) => {
       paragraph.alignment = profile.body.alignment;
+      if (profile.body.firstLineIndentMm) {
+        paragraph.firstLineIndent = mmToPoints(profile.body.firstLineIndentMm.preferred);
+      }
     });
     await context.sync();
+  });
+}
+
+export async function selectFinding(finding: Finding): Promise<boolean> {
+  if (!isWordHost()) throw new Error("Tính năng chỉ hoạt động trong Microsoft Word.");
+  if (finding.paragraphIndex === undefined) return false;
+
+  return Word.run(async (context) => {
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("text");
+    await context.sync();
+    const paragraph = paragraphs.items[finding.paragraphIndex as number];
+    if (!paragraph) return false;
+    paragraph.getRange().select();
+    await context.sync();
+    return true;
   });
 }
