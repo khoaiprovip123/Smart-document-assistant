@@ -1,25 +1,87 @@
 # Deployment
 
-## Pilot
+## 1. Pilot / Development
 
-1. Build và test trên máy IT.
-2. Chạy HTTPS dev server hoặc host bản build trên HTTPS.
-3. Sideload `manifest.xml` vào Word Desktop.
-4. Kiểm thử trên file bản sao.
-5. Chỉ mở rộng cho nhóm pilot sau khi các rule nội bộ được xác nhận.
+1. Cài Node.js 22 và Microsoft Word Desktop.
+2. Chạy `npm install`.
+3. Chạy `npm run verify`.
+4. Chạy `npm run dev`.
+5. Terminal khác chạy `npm run start:word` để sideload `manifest.xml`.
+6. Luôn thử trên bản sao tài liệu trước.
 
-## Production
+`manifest.xml` development sử dụng `https://localhost:3000` và không được dùng trực tiếp cho production.
 
-- Host nội dung `dist/` trên HTTPS domain nội bộ hoặc hạ tầng web được HPC kiểm soát.
-- Thay toàn bộ `https://localhost:3000` trong `manifest.xml` bằng production origin.
-- Validate manifest lại.
-- Triển khai tập trung qua Microsoft 365 Admin Center cho nhóm người dùng mục tiêu.
+## 2. Production build
 
-## Rollback
+Build web bundle:
 
-- Ứng dụng: gỡ assignment Add-in hoặc quay lại manifest/version trước.
-- Tài liệu: MVP hỗ trợ rollback lần thay đổi formatting gần nhất trong phiên Task Pane.
+```bash
+npm run build
+```
 
-## Lưu ý
+Sinh manifest theo HTTPS origin thật:
 
-Không triển khai production với `localhost`. Không đưa API key hoặc dữ liệu nhạy cảm vào source/manifest.
+```bash
+ADDIN_ORIGIN=https://documents.example.com npm run build:manifest
+npm run validate:manifest:production
+```
+
+PowerShell:
+
+```powershell
+$env:ADDIN_ORIGIN="https://documents.example.com"
+npm run build:manifest
+npm run validate:manifest:production
+```
+
+Script sẽ tạo `manifest.production.xml` từ `manifest.xml`; file sinh ra được ignore khỏi Git để tránh commit nhầm domain môi trường.
+
+## 3. Hosting
+
+- Host nội dung `dist/` trên đúng origin đã truyền vào `ADDIN_ORIGIN`.
+- Bắt buộc HTTPS với certificate hợp lệ.
+- `taskpane.html`, `commands.html` và `/assets/*` phải truy cập được từ origin đó.
+- Không nhúng secrets hoặc API key vào bundle/manifest.
+
+## 4. Microsoft 365 rollout
+
+1. Pilot bằng nhóm IT/TechCenter trước.
+2. Test Word Desktop bằng tài liệu bản sao.
+3. Sau khi pilot pass, triển khai `manifest.production.xml` tập trung qua Microsoft 365 Admin Center cho nhóm mục tiêu.
+4. Mở rộng assignment theo từng nhóm thay vì toàn công ty ngay lập tức.
+
+## 5. Smoke test bắt buộc
+
+Kiểm tra tối thiểu:
+
+```text
+Open Word -> HPC Assistant
+-> Load/Create HPC Styles
+-> Scan
+-> Navigate finding
+-> Fix Selected
+-> Rollback
+-> Normalize selection
+-> Numbering Heading
+-> Rollback numbering
+-> Standardize table
+-> Insert/update TOC
+-> Re-scan
+-> Pre-release status
+```
+
+Các API phụ thuộc phiên bản Word. Nếu host không hỗ trợ WordApi/WordApiDesktop cần thiết, add-in phải báo capability error và không cố giả lập thao tác.
+
+## 6. Rollback deployment
+
+- Ứng dụng: gỡ assignment hoặc quay lại manifest/web build trước.
+- Formatting: dùng Rollback trong add-in khi structure guard còn hợp lệ.
+- TOC/table operations: dùng Word native Undo nếu cần hoàn nguyên ngay sau thao tác; smoke test phải xác nhận hành vi này trên Word Desktop mục tiêu.
+
+## 7. Release gate
+
+Chỉ đánh dấu production-approved khi:
+
+- GitHub Actions HEAD main pass Build + Unit Tests + cả hai manifest validation.
+- Word Desktop smoke test pass trên tài liệu mẫu và bản sao tài liệu thực tế.
+- HPC phê duyệt các profile đang mang trạng thái `draft` trước khi dùng làm chuẩn chính thức.

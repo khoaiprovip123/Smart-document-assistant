@@ -26,5 +26,11 @@ jobs:
         run: npm run build
       - name: Unit tests
         run: npm test
-      - name: Validate Office manifest
+      - name: Validate development manifest
         run: npm run validate:manifest
+      - name: Generate production manifest
+        env:
+          ADDIN_ORIGIN: https://addin.example.com
+        run: npm run build:manifest
+      - name: Validate production manifest
+        run: npm run validate:manifest:production

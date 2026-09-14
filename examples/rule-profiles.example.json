@@ -1,0 +1,25 @@
+[
+  {
+    "id": "HPC-PILOT-CUSTOM",
+    "name": "HPC Pilot Custom",
+    "version": "0.1.0",
+    "status": "draft",
+    "description": "Ví dụ profile JSON để pilot; thay đổi theo chuẩn đã được HPC phê duyệt.",
+    "page": {
+      "paperSize": "A4",
+      "orientation": "Portrait",
+      "margins": {
+        "top": { "min": 20, "max": 25, "preferred": 20, "unit": "mm" },
+        "bottom": { "min": 20, "max": 25, "preferred": 20, "unit": "mm" },
+        "left": { "min": 30, "max": 35, "preferred": 30, "unit": "mm" },
+        "right": { "min": 15, "max": 20, "preferred": 20, "unit": "mm" }
+      }
+    },
+    "body": {
+      "fontName": "Times New Roman",
+      "fontSize": { "min": 13, "max": 14, "preferred": 13, "unit": "pt" },
+      "alignment": "Justified",
+      "firstLineIndentMm": { "min": 10, "max": 12.7, "preferred": 10, "unit": "mm" }
+    }
+  }
+]

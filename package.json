@@ -1,6 +1,6 @@
 {
   "name": "hpc-smart-document-assistant",
-  "version": "0.1.0",
+  "version": "1.0.0-rc.1",
   "private": true,
   "description": "Microsoft Word Add-in for HPC document standardization and compliance checking.",
   "type": "module",
@@ -9,26 +9,29 @@
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "verify": "npm run build && npm test && npm run validate:manifest",
     "validate:manifest": "office-addin-manifest validate manifest.xml",
+    "build:manifest": "node scripts/build-manifest.mjs",
+    "validate:manifest:production": "office-addin-manifest validate manifest.production.xml",
     "start:word": "office-addin-debugging start manifest.xml desktop",
     "stop:word": "office-addin-debugging stop manifest.xml"
   },
   "dependencies": {
-    "@fluentui/react-components": "^9.74.7",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "@fluentui/react-components": "9.74.7",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "@types/office-js": "^1.0.609",
-    "@types/react": "^19.1.12",
-    "@types/react-dom": "^19.1.9",
-    "@vitejs/plugin-react": "^5.0.2",
-    "office-addin-debugging": "^7.0.0",
-    "office-addin-dev-certs": "^3.0.0",
-    "office-addin-manifest": "^3.0.0",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.5",
-    "vitest": "^3.2.4"
+    "@types/node": "22.10.0",
+    "@types/office-js": "1.0.609",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.2",
+    "office-addin-debugging": "7.0.0",
+    "office-addin-dev-certs": "3.0.0",
+    "office-addin-manifest": "3.0.0",
+    "typescript": "5.9.2",
+    "vite": "7.1.5",
+    "vitest": "3.2.4"
   }
 }
