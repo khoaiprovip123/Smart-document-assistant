@@ -1,4 +1,6 @@
+import { recordCompatibilityTransaction } from "../fixes/compatTransactionSession";
 import { classifyParagraph } from "../rules/documentClassifier";
+import { readSemanticDocumentSnapshot } from "../word/semanticWordService";
 import { rollbackStore } from "./rollbackStore";
 import { readDocumentSnapshot } from "./wordService";
 
@@ -29,6 +31,7 @@ export async function normalizeHeadingNumbering(): Promise<HeadingNumberingResul
     throw new Error("Microsoft Word hiện tại chưa hỗ trợ WordApi 1.3 để quản lý numbering.");
   }
 
+  const semanticBefore = await readSemanticDocumentSnapshot();
   const snapshot = await readDocumentSnapshot();
   const headingCandidates = snapshot.paragraphs
     .map((paragraph) => ({ paragraph, classification: classifyParagraph(paragraph) }))
@@ -67,6 +70,12 @@ export async function normalizeHeadingNumbering(): Promise<HeadingNumberingResul
     }
 
     await context.sync();
+  });
+
+  recordCompatibilityTransaction({
+    label: `V1 Numbering Heading (${candidates.length})`,
+    before: semanticBefore,
+    findingIds: []
   });
 
   return { numbered: candidates.length, skippedExistingLists };
