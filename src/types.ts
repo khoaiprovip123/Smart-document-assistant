@@ -115,6 +115,16 @@ export interface FindingFix {
   lineSpacingPt?: number;
 }
 
+export interface FindingProvenance {
+  sourceId: string;
+  sourceTitle: string;
+  issuer: string;
+  sourceLocator?: string;
+  sourceUrl?: string;
+  profileId: string;
+  profileVersion: string;
+}
+
 export interface Finding {
   id: string;
   ruleId: string;
@@ -143,6 +153,7 @@ export interface Finding {
     | "capability";
   autoFixable: boolean;
   fix?: FindingFix;
+  provenance?: FindingProvenance;
 }
 
 export interface DocumentCheckResult {
