@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+### Semantic Table Formatting & Persistent Word Mode
+
+- Thay cơ chế chuẩn hóa bảng dùng một alignment chung bằng semantic column alignment:
+  - STT/mã/ngày/trạng thái → giữa.
+  - Số lượng/đơn giá/thành tiền/tỷ lệ → phải.
+  - Tên/nội dung/mô tả/ghi chú → trái.
+  - Cột mơ hồ hoặc confidence thấp → giữ nguyên.
+- Tách `Word.Table.alignment` (vị trí bảng trên trang) khỏi `TableCell.horizontalAlignment`; không còn dùng `table.horizontalAlignment` để ép mọi cell cùng một kiểu căn.
+- Thêm `table-semantic-alignment` quality requirement và semantic snapshot `values/horizontalAlignment` để phát hiện bảng bị áp uniform alignment quá mức; `Mixed/Unknown` không bị đoán.
+- Thêm document-level auto-open bằng `Office.AutoShowTaskpaneWithDocument` và UI `Luôn mở HPC Assistant cùng tài liệu này`.
+- `npm run start:word` chuyển thành lệnh hướng dẫn Persistent Word Mode và không còn tự mở Word/document trắng.
+- Debug launcher đổi sang `npm run debug:word`; stop bằng `npm run debug:word:stop`.
+- Cập nhật `INSTALL.md`, `DEPLOYMENT.md`, `README.md` cho production hosting HTTPS + Microsoft 365 Integrated Apps rollout.
+- Production dependency audit tiếp tục là blocking CI gate; full dev/toolchain audit chỉ diagnostic, không dùng `npm audit fix --force` tự động.
+- Production approval vẫn yêu cầu Word Desktop smoke test thực tế, gồm semantic table alignment và save/close/reopen document auto-open.
+
 ### V2 Document Standards Platform
 
 - Hoàn tất M1 Standards Foundation: source registry, rule registry, profile registry, precedence resolution và provenance.
@@ -18,9 +34,9 @@
   - Source-backed Fix Preview, Document Health dashboard và V2 Preflight `READY` / `REVIEW_REQUIRED` / `BLOCKED`.
   - V2 workflow orchestration: V1 system-profile mapping → semantic snapshot → resolved profile → engines → health/preview/preflight.
   - Task Pane hiển thị V2 health, fixability, provenance preview, capability gaps và preflight song song với V1 compatibility.
+- Hoàn tất M6 core: Template Analyzer, UNVERIFIED Draft Generator, Profile Review UI, Audit Report, synthetic QA corpus, performance measurement proxy và Word Desktop release matrix.
 - V2 Word mutation adapter vẫn ở chế độ preview/policy architecture; mutation thực tế tiếp tục dùng V1 compatibility cho đến khi V2 adapter qua Word Desktop smoke test.
-- CI đã kiểm chứng M3, M4, M5 core, orchestration, Fix All Safe boundary và Task Pane integration bằng Build + Unit Tests + development/production manifest validation.
-- `npm install` hiện vẫn báo 13 dependency vulnerabilities (5 moderate, 7 high, 1 critical). Chưa dùng `npm audit fix --force` vì có thể tạo breaking changes; cần audit riêng trước production hardening.
+- CI kiểm chứng các gate bằng production dependency audit + Build + Unit Tests + development/production manifest validation.
 
 ### Planning / source governance
 

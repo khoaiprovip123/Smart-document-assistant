@@ -13,8 +13,10 @@
     "validate:manifest": "office-addin-manifest validate manifest.xml",
     "build:manifest": "node scripts/build-manifest.mjs",
     "validate:manifest:production": "office-addin-manifest validate manifest.production.xml",
-    "start:word": "office-addin-debugging start manifest.xml desktop",
-    "stop:word": "office-addin-debugging stop manifest.xml"
+    "start:word": "node scripts/word-start-info.mjs",
+    "debug:word": "office-addin-debugging start manifest.xml desktop",
+    "debug:word:stop": "office-addin-debugging stop manifest.xml",
+    "stop:word": "npm run debug:word:stop"
   },
   "dependencies": {
     "@fluentui/react-components": "9.74.7",
