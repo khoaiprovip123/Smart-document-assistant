@@ -1,5 +1,27 @@
 export type Severity = "critical" | "warning" | "suggestion" | "passed";
-export type FindingScope = "document" | "section" | "paragraph" | "structure" | "capability";
+export type FindingScope = "document" | "section" | "paragraph" | "structure" | "capability" | "table";
+export type HeadingLevel = 1 | 2 | 3 | 4;
+export type ParagraphRole =
+  | "body"
+  | "heading"
+  | "list"
+  | "title"
+  | "subtitle"
+  | "caption"
+  | "signature"
+  | "recipient"
+  | "note"
+  | "appendix"
+  | "tableText"
+  | "unknown";
+export type ClassificationConfidence = "explicit" | "metadata" | "heuristic" | "fallback";
+
+export interface ParagraphRoleInfo {
+  role: ParagraphRole;
+  confidence: ClassificationConfidence;
+  headingLevel?: HeadingLevel;
+  listLevel?: number;
+}
 
 export interface NumericRule {
   min: number;
@@ -23,6 +45,8 @@ export interface ParagraphRuleSet {
   spaceBeforePt?: NumericRule;
   spaceAfterPt?: NumericRule;
   lineSpacingPt?: NumericRule;
+  bold?: boolean;
+  italic?: boolean;
 }
 
 export interface DocumentRuleProfile {
@@ -38,6 +62,7 @@ export interface DocumentRuleProfile {
     margins: MarginRuleSet;
   };
   body: ParagraphRuleSet;
+  headings?: Partial<Record<HeadingLevel, ParagraphRuleSet>>;
   sopRequiredSections?: string[];
 }
 
@@ -52,6 +77,18 @@ export interface ParagraphSnapshot {
   spaceBeforePt?: number;
   spaceAfterPt?: number;
   lineSpacingPt?: number;
+  listLevel?: number;
+  listString?: string;
+  role?: ParagraphRole;
+  headingLevel?: HeadingLevel;
+}
+
+export interface TableSnapshot {
+  index: number;
+  rowCount?: number;
+  columnCount?: number;
+  style?: string;
+  headerRowCount?: number;
 }
 
 export interface DocumentSnapshot {
@@ -65,6 +102,17 @@ export interface DocumentSnapshot {
     rightMarginPt?: number;
   };
   paragraphs: ParagraphSnapshot[];
+  tables?: TableSnapshot[];
+}
+
+export interface FindingFix {
+  fontName?: string;
+  fontSize?: number;
+  alignment?: ParagraphRuleSet["alignment"];
+  firstLineIndentPt?: number;
+  spaceBeforePt?: number;
+  spaceAfterPt?: number;
+  lineSpacingPt?: number;
 }
 
 export interface Finding {
@@ -94,6 +142,7 @@ export interface Finding {
     | "sopSection"
     | "capability";
   autoFixable: boolean;
+  fix?: FindingFix;
 }
 
 export interface DocumentCheckResult {

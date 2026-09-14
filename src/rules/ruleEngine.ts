@@ -1,10 +1,20 @@
-import type { DocumentCheckResult, DocumentRuleProfile, DocumentSnapshot, Finding, NumericRule, Severity } from "../types";
-import { inRange, pointsToMm } from "../utils/units";
+import type {
+  DocumentCheckResult,
+  DocumentRuleProfile,
+  DocumentSnapshot,
+  Finding,
+  FindingScope,
+  NumericRule,
+  ParagraphRuleSet,
+  ParagraphSnapshot,
+  Severity
+} from "../types";
+import { inRange, mmToPoints, pointsToMm } from "../utils/units";
+import { classifyParagraph } from "./documentClassifier";
 import { validateSopStructure } from "../validators/sopValidator";
 
 const formatRange = (rule: NumericRule) => `${rule.min}-${rule.max} ${rule.unit}`;
 const normalize = (value?: string) => (value ?? "").trim().toLocaleLowerCase("vi-VN");
-const isHeadingStyle = (style?: string) => /^(?:heading\s*[1-9]|hpc\.heading[1-4])$/i.test((style ?? "").trim());
 
 function marginFinding(
   id: string,
@@ -18,7 +28,7 @@ function marginFinding(
       id,
       ruleId: id,
       severity: "warning",
-      scope: "document",
+      scope: "capability",
       title,
       message: "Không đọc được giá trị lề trên phiên bản Word hiện tại.",
       field: "capability",
@@ -42,32 +52,198 @@ function marginFinding(
   };
 }
 
-function paragraphNumericFinding(
-  paragraphIndex: number,
+function numericFinding(
+  paragraph: ParagraphSnapshot,
   ruleId: string,
   title: string,
   field: Finding["field"],
   currentPt: number,
   rule: NumericRule,
-  severity: Exclude<Severity, "critical" | "passed">
+  severity: Exclude<Severity, "critical" | "passed">,
+  scope: FindingScope,
+  prefix: string
 ): Finding {
   const current = rule.unit === "mm" ? pointsToMm(currentPt) : currentPt;
   const tolerance = rule.unit === "mm" ? 0.3 : 0.1;
   const ok = inRange(current, rule.min, rule.max, tolerance);
+  const preferredPt = rule.unit === "mm" ? mmToPoints(rule.preferred) : rule.preferred;
 
   return {
-    id: `p-${paragraphIndex}-${field}`,
+    id: `${prefix}-${paragraph.index}-${field}`,
     ruleId,
     severity: ok ? "passed" : severity,
-    scope: "paragraph",
-    title: `Đoạn ${paragraphIndex + 1}: ${title}`,
+    scope,
+    title: `Đoạn ${paragraph.index + 1}: ${title}`,
     message: ok ? `${title} đạt chuẩn.` : `${title} chưa nằm trong ${formatRange(rule)}.`,
     current: Number(current.toFixed(1)),
     target: rule.preferred,
-    paragraphIndex,
+    paragraphIndex: paragraph.index,
     field,
-    autoFixable: !ok
+    autoFixable: !ok,
+    fix: !ok
+      ? field === "firstLineIndent"
+        ? { firstLineIndentPt: preferredPt }
+        : field === "spaceBefore"
+          ? { spaceBeforePt: preferredPt }
+          : field === "spaceAfter"
+            ? { spaceAfterPt: preferredPt }
+            : field === "lineSpacing"
+              ? { lineSpacingPt: preferredPt }
+              : undefined
+      : undefined
   };
+}
+
+function typographyFindings(
+  paragraph: ParagraphSnapshot,
+  rules: ParagraphRuleSet,
+  options: { scope: FindingScope; prefix: "BODY" | "HEADING"; severity: "warning" | "suggestion" }
+): Finding[] {
+  const findings: Finding[] = [];
+  const { scope, prefix, severity } = options;
+  const hasReadableFontName = Boolean(paragraph.fontName?.trim());
+  const fontOk = hasReadableFontName && normalize(paragraph.fontName) === normalize(rules.fontName);
+
+  findings.push({
+    id: `${prefix.toLowerCase()}-${paragraph.index}-fontName`,
+    ruleId: `${prefix}-FONT-NAME`,
+    severity: fontOk ? "passed" : severity,
+    scope,
+    title: `Đoạn ${paragraph.index + 1}: Font`,
+    message: fontOk
+      ? "Font đạt chuẩn."
+      : hasReadableFontName
+        ? "Font chưa đúng profile."
+        : "Đoạn có mixed/unknown font; cần kiểm tra thủ công để bảo toàn định dạng cục bộ.",
+    current: paragraph.fontName || "Mixed/Unknown",
+    target: rules.fontName,
+    paragraphIndex: paragraph.index,
+    field: "fontName",
+    autoFixable: hasReadableFontName && !fontOk,
+    fix: hasReadableFontName && !fontOk ? { fontName: rules.fontName } : undefined
+  });
+
+  if (typeof paragraph.fontSize === "number") {
+    const sizeOk = inRange(paragraph.fontSize, rules.fontSize.min, rules.fontSize.max, 0.1);
+    findings.push({
+      id: `${prefix.toLowerCase()}-${paragraph.index}-fontSize`,
+      ruleId: `${prefix}-FONT-SIZE`,
+      severity: sizeOk ? "passed" : severity,
+      scope,
+      title: `Đoạn ${paragraph.index + 1}: Cỡ chữ`,
+      message: sizeOk ? "Cỡ chữ đạt chuẩn." : `Cỡ chữ chưa nằm trong ${formatRange(rules.fontSize)}.`,
+      current: paragraph.fontSize,
+      target: rules.fontSize.preferred,
+      paragraphIndex: paragraph.index,
+      field: "fontSize",
+      autoFixable: !sizeOk,
+      fix: !sizeOk ? { fontSize: rules.fontSize.preferred } : undefined
+    });
+  } else {
+    findings.push({
+      id: `${prefix.toLowerCase()}-${paragraph.index}-fontSize`,
+      ruleId: `${prefix}-FONT-SIZE`,
+      severity,
+      scope,
+      title: `Đoạn ${paragraph.index + 1}: Cỡ chữ`,
+      message: "Đoạn có mixed/unknown cỡ chữ; cần kiểm tra thủ công để bảo toàn định dạng cục bộ.",
+      current: "Mixed/Unknown",
+      target: rules.fontSize.preferred,
+      paragraphIndex: paragraph.index,
+      field: "fontSize",
+      autoFixable: false
+    });
+  }
+
+  if (paragraph.alignment) {
+    const alignmentOk = normalize(paragraph.alignment) === normalize(rules.alignment);
+    findings.push({
+      id: `${prefix.toLowerCase()}-${paragraph.index}-alignment`,
+      ruleId: `${prefix}-ALIGNMENT`,
+      severity: alignmentOk ? "passed" : prefix === "BODY" ? "suggestion" : severity,
+      scope,
+      title: `Đoạn ${paragraph.index + 1}: Căn đoạn`,
+      message: alignmentOk ? "Căn đoạn đạt chuẩn." : "Căn đoạn khác profile.",
+      current: paragraph.alignment,
+      target: rules.alignment,
+      paragraphIndex: paragraph.index,
+      field: "alignment",
+      autoFixable: !alignmentOk,
+      fix: !alignmentOk ? { alignment: rules.alignment } : undefined
+    });
+  }
+
+  return findings;
+}
+
+function bodyFindings(profile: DocumentRuleProfile, paragraph: ParagraphSnapshot): Finding[] {
+  const findings = typographyFindings(paragraph, profile.body, {
+    scope: "paragraph",
+    prefix: "BODY",
+    severity: "warning"
+  });
+
+  if (profile.body.firstLineIndentMm && typeof paragraph.firstLineIndentPt === "number") {
+    findings.push(
+      numericFinding(
+        paragraph,
+        "BODY-FIRST-LINE-INDENT",
+        "Thụt đầu dòng",
+        "firstLineIndent",
+        paragraph.firstLineIndentPt,
+        profile.body.firstLineIndentMm,
+        "warning",
+        "paragraph",
+        "body"
+      )
+    );
+  }
+  if (profile.body.spaceBeforePt && typeof paragraph.spaceBeforePt === "number") {
+    findings.push(
+      numericFinding(
+        paragraph,
+        "BODY-SPACE-BEFORE",
+        "Khoảng cách trước đoạn",
+        "spaceBefore",
+        paragraph.spaceBeforePt,
+        profile.body.spaceBeforePt,
+        "suggestion",
+        "paragraph",
+        "body"
+      )
+    );
+  }
+  if (profile.body.spaceAfterPt && typeof paragraph.spaceAfterPt === "number") {
+    findings.push(
+      numericFinding(
+        paragraph,
+        "BODY-SPACE-AFTER",
+        "Khoảng cách sau đoạn",
+        "spaceAfter",
+        paragraph.spaceAfterPt,
+        profile.body.spaceAfterPt,
+        "suggestion",
+        "paragraph",
+        "body"
+      )
+    );
+  }
+  if (profile.body.lineSpacingPt && typeof paragraph.lineSpacingPt === "number") {
+    findings.push(
+      numericFinding(
+        paragraph,
+        "BODY-LINE-SPACING",
+        "Giãn dòng",
+        "lineSpacing",
+        paragraph.lineSpacingPt,
+        profile.body.lineSpacingPt,
+        "suggestion",
+        "paragraph",
+        "body"
+      )
+    );
+  }
+  return findings;
 }
 
 function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnapshot): Finding[] {
@@ -75,129 +251,22 @@ function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnaps
 
   snapshot.paragraphs.forEach((paragraph) => {
     if (!paragraph.text.trim()) return;
-    if (isHeadingStyle(paragraph.style)) return;
+    const classification = classifyParagraph(paragraph);
 
-    const hasReadableFontName = Boolean(paragraph.fontName?.trim());
-    const fontOk = hasReadableFontName && normalize(paragraph.fontName) === normalize(profile.body.fontName);
-    findings.push({
-      id: `p-${paragraph.index}-fontName`,
-      ruleId: "BODY-FONT-NAME",
-      severity: fontOk ? "passed" : "warning",
-      scope: "paragraph",
-      title: `Đoạn ${paragraph.index + 1}: Font`,
-      message: fontOk
-        ? "Font đạt chuẩn."
-        : hasReadableFontName
-          ? "Font thân bài chưa đúng profile."
-          : "Đoạn có mixed/unknown font; cần kiểm tra thủ công để bảo toàn định dạng cục bộ.",
-      current: paragraph.fontName || "Mixed/Unknown",
-      target: profile.body.fontName,
-      paragraphIndex: paragraph.index,
-      field: "fontName",
-      autoFixable: hasReadableFontName && !fontOk
-    });
-
-    if (typeof paragraph.fontSize === "number") {
-      const sizeOk = inRange(paragraph.fontSize, profile.body.fontSize.min, profile.body.fontSize.max, 0.1);
-      findings.push({
-        id: `p-${paragraph.index}-fontSize`,
-        ruleId: "BODY-FONT-SIZE",
-        severity: sizeOk ? "passed" : "warning",
-        scope: "paragraph",
-        title: `Đoạn ${paragraph.index + 1}: Cỡ chữ`,
-        message: sizeOk ? "Cỡ chữ đạt chuẩn." : `Cỡ chữ chưa nằm trong ${formatRange(profile.body.fontSize)}.`,
-        current: paragraph.fontSize,
-        target: profile.body.fontSize.preferred,
-        paragraphIndex: paragraph.index,
-        field: "fontSize",
-        autoFixable: !sizeOk
-      });
-    } else {
-      findings.push({
-        id: `p-${paragraph.index}-fontSize`,
-        ruleId: "BODY-FONT-SIZE",
-        severity: "warning",
-        scope: "paragraph",
-        title: `Đoạn ${paragraph.index + 1}: Cỡ chữ`,
-        message: "Đoạn có mixed/unknown cỡ chữ; cần kiểm tra thủ công để bảo toàn định dạng cục bộ.",
-        current: "Mixed/Unknown",
-        target: profile.body.fontSize.preferred,
-        paragraphIndex: paragraph.index,
-        field: "fontSize",
-        autoFixable: false
-      });
+    if (classification.role === "body") {
+      findings.push(...bodyFindings(profile, paragraph));
+      return;
     }
 
-    if (paragraph.alignment) {
-      const alignmentOk = normalize(paragraph.alignment) === normalize(profile.body.alignment);
-      findings.push({
-        id: `p-${paragraph.index}-alignment`,
-        ruleId: "BODY-ALIGNMENT",
-        severity: alignmentOk ? "passed" : "suggestion",
-        scope: "paragraph",
-        title: `Đoạn ${paragraph.index + 1}: Căn đoạn`,
-        message: alignmentOk ? "Căn đoạn đạt chuẩn." : "Căn đoạn khác profile.",
-        current: paragraph.alignment,
-        target: profile.body.alignment,
-        paragraphIndex: paragraph.index,
-        field: "alignment",
-        autoFixable: !alignmentOk
-      });
-    }
-
-    if (profile.body.firstLineIndentMm && typeof paragraph.firstLineIndentPt === "number") {
+    if (classification.role === "heading" && classification.headingLevel) {
+      const headingRules = profile.headings?.[classification.headingLevel];
+      if (!headingRules) return;
       findings.push(
-        paragraphNumericFinding(
-          paragraph.index,
-          "BODY-FIRST-LINE-INDENT",
-          "Thụt đầu dòng",
-          "firstLineIndent",
-          paragraph.firstLineIndentPt,
-          profile.body.firstLineIndentMm,
-          "warning"
-        )
-      );
-    }
-
-    if (profile.body.spaceBeforePt && typeof paragraph.spaceBeforePt === "number") {
-      findings.push(
-        paragraphNumericFinding(
-          paragraph.index,
-          "BODY-SPACE-BEFORE",
-          "Khoảng cách trước đoạn",
-          "spaceBefore",
-          paragraph.spaceBeforePt,
-          profile.body.spaceBeforePt,
-          "suggestion"
-        )
-      );
-    }
-
-    if (profile.body.spaceAfterPt && typeof paragraph.spaceAfterPt === "number") {
-      findings.push(
-        paragraphNumericFinding(
-          paragraph.index,
-          "BODY-SPACE-AFTER",
-          "Khoảng cách sau đoạn",
-          "spaceAfter",
-          paragraph.spaceAfterPt,
-          profile.body.spaceAfterPt,
-          "suggestion"
-        )
-      );
-    }
-
-    if (profile.body.lineSpacingPt && typeof paragraph.lineSpacingPt === "number") {
-      findings.push(
-        paragraphNumericFinding(
-          paragraph.index,
-          "BODY-LINE-SPACING",
-          "Giãn dòng",
-          "lineSpacing",
-          paragraph.lineSpacingPt,
-          profile.body.lineSpacingPt,
-          "suggestion"
-        )
+        ...typographyFindings(paragraph, headingRules, {
+          scope: "section",
+          prefix: "HEADING",
+          severity: "warning"
+        })
       );
     }
   });
@@ -206,15 +275,19 @@ function paragraphFindings(profile: DocumentRuleProfile, snapshot: DocumentSnaps
 }
 
 function calculateScore(findings: Finding[]): number {
-  const relevant = findings.filter((f) => f.severity !== "passed");
-  if (!relevant.length) return 100;
-  const penalties: Record<Exclude<Severity, "passed">, number> = {
-    critical: 12,
-    warning: 5,
-    suggestion: 2
+  const scorable = findings.filter((finding) => finding.scope !== "capability");
+  if (!scorable.length) return 100;
+
+  const penaltyWeight: Record<Exclude<Severity, "passed">, number> = {
+    critical: 1,
+    warning: 0.6,
+    suggestion: 0.25
   };
-  const penalty = relevant.reduce((total, finding) => total + penalties[finding.severity as Exclude<Severity, "passed">], 0);
-  return Math.max(0, Math.round(100 - penalty));
+  const penalty = scorable.reduce((total, finding) => {
+    if (finding.severity === "passed") return total;
+    return total + penaltyWeight[finding.severity];
+  }, 0);
+  return Math.max(0, Math.min(100, Math.round(100 * (1 - penalty / scorable.length))));
 }
 
 export function evaluateDocument(profile: DocumentRuleProfile, snapshot: DocumentSnapshot): DocumentCheckResult {
