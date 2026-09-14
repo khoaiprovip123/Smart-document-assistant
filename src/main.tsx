@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { FluentProvider, webLightTheme } from "@fluentui/react-components";
 import App from "./App";
+import V2OperationsPanel from "./ui/V2OperationsPanel";
 import "./styles.css";
 
 function render() {
@@ -12,6 +13,7 @@ function render() {
     <StrictMode>
       <FluentProvider theme={webLightTheme}>
         <App />
+        <V2OperationsPanel />
       </FluentProvider>
     </StrictMode>
   );
