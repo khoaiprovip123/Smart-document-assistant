@@ -194,7 +194,13 @@ export async function rollbackLastChange(): Promise<boolean> {
 
     snapshot.paragraphs.forEach((saved) => {
       const paragraph = paragraphs.items[saved.index];
+      const now = current.paragraphs[saved.index];
       if (!paragraph) return;
+
+      if (listMetadataSupported() && saved.listLevel === undefined && now?.listLevel !== undefined) {
+        paragraph.detachFromList();
+      }
+
       if (saved.fontName) paragraph.font.name = saved.fontName;
       if (saved.fontSize !== undefined) paragraph.font.size = saved.fontSize;
       if (saved.alignment) paragraph.alignment = saved.alignment as Word.Alignment;

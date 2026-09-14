@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import {
   Badge,
   Button,
@@ -14,6 +14,7 @@ import {
   tokens
 } from "@fluentui/react-components";
 import { RULE_PROFILES, getProfile } from "./config/rules";
+import { parseRuleProfiles } from "./config/profileLoader";
 import { evaluateDocument } from "./rules/ruleEngine";
 import {
   applyFindings,
@@ -24,9 +25,11 @@ import {
 } from "./services/wordService";
 import { ensureHpcStyles } from "./services/styleManager";
 import { standardizeTables } from "./services/tableService";
+import { normalizeHeadingNumbering } from "./services/headingNumberingService";
+import { insertOrUpdateTableOfContents } from "./services/tocService";
 import { evaluateReleaseReadiness } from "./validators/preReleaseValidator";
 import { filterFindings, type FindingFilter } from "./ui/findingFilters";
-import type { DocumentCheckResult, Finding } from "./types";
+import type { DocumentCheckResult, DocumentRuleProfile, Finding } from "./types";
 
 const useStyles = makeStyles({
   page: { padding: "16px", display: "flex", flexDirection: "column", gap: "12px" },
@@ -46,7 +49,8 @@ const useStyles = makeStyles({
   findingActions: { display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" },
   error: { padding: "10px", borderRadius: "6px", background: tokens.colorPaletteRedBackground1 },
   warning: { padding: "10px", borderRadius: "6px", background: tokens.colorPaletteYellowBackground1 },
-  note: { color: tokens.colorNeutralForeground3 }
+  note: { color: tokens.colorNeutralForeground3 },
+  fileInput: { maxWidth: "100%" }
 });
 
 const severityColor = (finding: Finding): "danger" | "warning" | "informative" | "success" => {
@@ -59,6 +63,7 @@ const severityColor = (finding: Finding): "danger" | "warning" | "informative" |
 export default function App() {
   const styles = useStyles();
   const [profileId, setProfileId] = useState("HPC-ND30");
+  const [customProfiles, setCustomProfiles] = useState<DocumentRuleProfile[]>([]);
   const [result, setResult] = useState<DocumentCheckResult | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FindingFilter>("all");
@@ -66,7 +71,11 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  const profile = useMemo(() => getProfile(profileId), [profileId]);
+  const profiles = useMemo(() => [...RULE_PROFILES, ...customProfiles], [customProfiles]);
+  const profile = useMemo(
+    () => profiles.find((item) => item.id === profileId) ?? getProfile("HPC-ND30"),
+    [profileId, profiles]
+  );
   const visibleFindings = useMemo(() => filterFindings(result?.findings ?? [], filter), [result, filter]);
   const release = useMemo(() => (result ? evaluateReleaseReadiness(result) : null), [result]);
 
@@ -162,6 +171,60 @@ export default function App() {
     }
   }
 
+  async function normalizeNumbering() {
+    setBusy(true);
+    setError(null);
+    try {
+      const numbering = await normalizeHeadingNumbering();
+      await scan();
+      setStatus(
+        `Đã chuẩn hóa numbering cho ${numbering.numbered} heading. Bỏ qua ${numbering.skippedExistingLists} heading đã thuộc list để tránh phá numbering hiện hữu.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể chuẩn hóa numbering heading.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function manageToc() {
+    setBusy(true);
+    setError(null);
+    try {
+      const toc = await insertOrUpdateTableOfContents();
+      setStatus(
+        toc.inserted
+          ? "Đã chèn mục lục tại vị trí con trỏ. WordApiDesktop 1.4 dùng Heading/Outline Level 1-4."
+          : `Đã cập nhật số trang cho ${toc.updated} mục lục hiện có.`
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể quản lý mục lục.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importRuleProfiles(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setError(null);
+    try {
+      const imported = parseRuleProfiles(await file.text());
+      const builtInIds = new Set(RULE_PROFILES.map((item) => item.id));
+      const collision = imported.find((item) => builtInIds.has(item.id));
+      if (collision) throw new Error(`Profile import trùng ID hệ thống: ${collision.id}.`);
+      setCustomProfiles(imported);
+      setProfileId(imported[0].id);
+      setResult(null);
+      setSelected(new Set());
+      setStatus(`Đã nạp ${imported.length} rule profile từ ${file.name}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể nạp rule profile JSON.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
   async function goToFinding(finding: Finding) {
     setError(null);
     try {
@@ -176,7 +239,7 @@ export default function App() {
     <main className={styles.page}>
       <header className={styles.header}>
         <Title2>HPC Smart Document Assistant</Title2>
-        <Text className={styles.note}>v1 — Scan → Review → Safe Fix → Rollback → Pre-release</Text>
+        <Text className={styles.note}>v1 RC — Scan → Review → Safe Fix → Rollback → Pre-release</Text>
       </header>
 
       <Card>
@@ -192,13 +255,15 @@ export default function App() {
             setFilter("all");
           }}
         >
-          {RULE_PROFILES.map((item) => (
+          {profiles.map((item) => (
             <Option key={item.id} value={item.id} text={item.name}>
               {item.name} {item.status === "draft" ? "(DRAFT)" : ""}
             </Option>
           ))}
         </Dropdown>
         <Text size={200} className={styles.note}>{profile.description}</Text>
+        <Text size={200} weight="semibold">Nạp profile JSON tùy chỉnh</Text>
+        <input className={styles.fileInput} type="file" accept="application/json,.json" onChange={(event) => void importRuleProfiles(event)} />
         {profile.status === "draft" && (
           <div className={styles.warning}>
             <Text weight="semibold">Profile DRAFT:</Text>{" "}
@@ -212,6 +277,8 @@ export default function App() {
         <Button onClick={fixSelected} disabled={busy || !result || selected.size === 0}>Sửa mục đã chọn ({selected.size})</Button>
         <Button onClick={formatSelection} disabled={busy}>Chuẩn hóa vùng chọn</Button>
         <Button onClick={normalizeTables} disabled={busy}>Chuẩn hóa bảng</Button>
+        <Button onClick={normalizeNumbering} disabled={busy}>Numbering Heading</Button>
+        <Button onClick={manageToc} disabled={busy}>Mục lục</Button>
         <Button onClick={undo} disabled={busy}>Rollback</Button>
         <Button onClick={createStyles} disabled={busy}>Tạo/Cập nhật HPC Styles</Button>
       </div>

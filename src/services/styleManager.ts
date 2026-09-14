@@ -2,6 +2,12 @@ import type { DocumentRuleProfile, ParagraphRuleSet } from "../types";
 import { mmToPoints } from "../utils/units";
 
 type HpcStyleType = "Paragraph" | "Table";
+type HpcOutlineLevel =
+  | "OutlineLevel1"
+  | "OutlineLevel2"
+  | "OutlineLevel3"
+  | "OutlineLevel4"
+  | "OutlineLevelBodyText";
 
 export interface HpcStyleDefinition {
   name: string;
@@ -15,9 +21,14 @@ export interface HpcStyleDefinition {
   lineSpacingPt?: number;
   bold?: boolean;
   italic?: boolean;
+  outlineLevel?: HpcOutlineLevel;
 }
 
-function fromParagraphRule(name: string, rule: ParagraphRuleSet, overrides: Partial<HpcStyleDefinition> = {}): HpcStyleDefinition {
+function fromParagraphRule(
+  name: string,
+  rule: ParagraphRuleSet,
+  overrides: Partial<HpcStyleDefinition> = {}
+): HpcStyleDefinition {
   return {
     name,
     type: "Paragraph",
@@ -30,6 +41,7 @@ function fromParagraphRule(name: string, rule: ParagraphRuleSet, overrides: Part
     lineSpacingPt: rule.lineSpacingPt?.preferred,
     bold: rule.bold,
     italic: rule.italic,
+    outlineLevel: "OutlineLevelBodyText",
     ...overrides
   };
 }
@@ -51,7 +63,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       firstLineIndentPt: 0,
       spaceBeforePt: 0,
       spaceAfterPt: 6,
-      bold: true
+      bold: true,
+      outlineLevel: "OutlineLevelBodyText"
     },
     {
       name: "HPC.SubTitle",
@@ -62,12 +75,13 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       firstLineIndentPt: 0,
       spaceBeforePt: 0,
       spaceAfterPt: 6,
-      italic: true
+      italic: true,
+      outlineLevel: "OutlineLevelBodyText"
     },
-    fromParagraphRule("HPC.Heading1", heading1),
-    fromParagraphRule("HPC.Heading2", heading2),
-    fromParagraphRule("HPC.Heading3", heading3),
-    fromParagraphRule("HPC.Heading4", heading4),
+    fromParagraphRule("HPC.Heading1", heading1, { outlineLevel: "OutlineLevel1" }),
+    fromParagraphRule("HPC.Heading2", heading2, { outlineLevel: "OutlineLevel2" }),
+    fromParagraphRule("HPC.Heading3", heading3, { outlineLevel: "OutlineLevel3" }),
+    fromParagraphRule("HPC.Heading4", heading4, { outlineLevel: "OutlineLevel4" }),
     {
       name: "HPC.Table",
       type: "Table",
@@ -81,7 +95,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       fontSize: 12,
       alignment: "Centered",
       firstLineIndentPt: 0,
-      bold: true
+      bold: true,
+      outlineLevel: "OutlineLevelBodyText"
     },
     {
       name: "HPC.Caption",
@@ -90,7 +105,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       fontSize: 12,
       alignment: "Centered",
       firstLineIndentPt: 0,
-      italic: true
+      italic: true,
+      outlineLevel: "OutlineLevelBodyText"
     },
     {
       name: "HPC.Note",
@@ -99,7 +115,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       fontSize: 11,
       alignment: "Left",
       firstLineIndentPt: 0,
-      italic: true
+      italic: true,
+      outlineLevel: "OutlineLevelBodyText"
     },
     {
       name: "HPC.Signature",
@@ -108,7 +125,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       fontSize: 13,
       alignment: "Centered",
       firstLineIndentPt: 0,
-      bold: true
+      bold: true,
+      outlineLevel: "OutlineLevelBodyText"
     },
     {
       name: "HPC.Recipient",
@@ -116,7 +134,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       fontName: profile.body.fontName,
       fontSize: 11,
       alignment: "Left",
-      firstLineIndentPt: 0
+      firstLineIndentPt: 0,
+      outlineLevel: "OutlineLevelBodyText"
     },
     {
       name: "HPC.Appendix",
@@ -125,7 +144,8 @@ export function buildHpcStyleDefinitions(profile: DocumentRuleProfile): HpcStyle
       fontSize: 14,
       alignment: "Centered",
       firstLineIndentPt: 0,
-      bold: true
+      bold: true,
+      outlineLevel: "OutlineLevelBodyText"
     }
   ];
 }
@@ -145,6 +165,7 @@ function applyStyleDefinition(style: Word.Style, definition: HpcStyleDefinition)
   if (definition.spaceBeforePt !== undefined) style.paragraphFormat.spaceBefore = definition.spaceBeforePt;
   if (definition.spaceAfterPt !== undefined) style.paragraphFormat.spaceAfter = definition.spaceAfterPt;
   if (definition.lineSpacingPt !== undefined) style.paragraphFormat.lineSpacing = definition.lineSpacingPt;
+  if (definition.outlineLevel !== undefined) style.paragraphFormat.outlineLevel = definition.outlineLevel;
 }
 
 export async function ensureHpcStyles(
