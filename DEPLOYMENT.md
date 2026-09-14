@@ -46,19 +46,31 @@ Script tạo `manifest.production.xml` từ `manifest.xml`; file sinh ra đượ
 - Không nhúng secrets hoặc API key vào bundle/manifest.
 - Production không phụ thuộc Vite dev server/localhost.
 
-## 4. Microsoft 365 persistent rollout
+## 4. Microsoft 365 Ribbon-first rollout
 
-Mục tiêu của production rollout là người dùng **mở Word bình thường, không chạy npm**, và `HPC Assistant` có sẵn trên Ribbon.
+Mục tiêu của production rollout là người dùng **mở Word bình thường, không chạy npm**, và custom tab **`HPC VĂN BẢN`** có sẵn trên Ribbon.
 
 Khuyến nghị:
 
 1. Microsoft 365 Admin Center → **Settings → Integrated apps**.
 2. Chọn triển khai custom Office Add-in và upload `manifest.production.xml`.
 3. Assignment trước cho nhóm IT/TechCenter pilot.
-4. Đóng/mở lại Word bằng tài khoản pilot và xác nhận nhóm `HPC VĂN BẢN` / nút `HPC Assistant` xuất hiện trên Ribbon.
-5. Sau smoke test mới mở rộng assignment theo nhóm/phòng ban; không rollout toàn công ty ngay lần đầu.
+4. Đóng/mở lại Word bằng tài khoản pilot và xác nhận custom tab `HPC VĂN BẢN` xuất hiện với đủ 8 nhóm:
+   - KIỂM TRA.
+   - SỬA & HOÀN TÁC.
+   - ĐỊNH DẠNG.
+   - BẢNG.
+   - HEADING & MỤC LỤC.
+   - TIÊU CHUẨN.
+   - PHÁT HÀNH.
+   - CÔNG CỤ.
+5. Xác nhận 6 lệnh ngắn chạy trực tiếp từ Ribbon: `Hoàn tác HPC`, `Chuẩn hóa vùng chọn`, `HPC Styles`, `Chuẩn hóa bảng`, `Đánh số Heading`, `Tạo/Cập nhật mục lục`.
+6. Xác nhận các luồng `Kiểm tra tài liệu`, `Sửa lỗi an toàn`, `Bộ tiêu chuẩn`, `Trước phát hành`, `Trung tâm chi tiết` mở Task Pane thay vì mutation ngay.
+7. Sau smoke test mới mở rộng assignment theo nhóm/phòng ban; không rollout toàn công ty ngay lần đầu.
 
 Centralized/Integrated Apps deployment là cơ chế cài add-in; `npm run debug:word` chỉ là dev tooling và không được dùng làm cách vận hành production.
+
+Phase Ribbon-first hiện dùng `FunctionFile` riêng cho command dispatcher và **không bật Shared Runtime**. Việc này là chủ đích của phase đầu để giảm rủi ro tương thích.
 
 ## 5. Auto-open theo từng tài liệu
 
@@ -102,26 +114,32 @@ Không merge/unmerge và không sửa text cell.
 
 ## 7. Smoke test bắt buộc
 
-Kiểm tra tối thiểu:
+Thực hiện trên **bản sao tài liệu thật** và ghi nhận kết quả từng bước:
 
 ```text
-Open Word normally -> HPC Assistant exists on Ribbon
+Open Word normally
+-> Verify custom tab HPC VĂN BẢN + 8 groups
 -> Open copied real document
--> Scan
--> Navigate finding
--> Fix Selected
--> Rollback
--> Normalize selection
--> Numbering Heading
--> Rollback numbering
--> Standardize table with mixed semantic columns
+-> Kiểm tra tài liệu (opens Detail Center)
+-> Select/verify profile
+-> Scan V1/V2 + Document Health + Fix Preview + Preflight
+-> Navigate one issue
+-> Sửa lỗi an toàn / Fix Selected
+-> Hoàn tác HPC
+-> Chuẩn hóa vùng chọn
+-> Hoàn tác HPC
+-> HPC Styles
+-> Đánh số Heading
+-> Chuẩn hóa bảng with mixed semantic columns
 -> Verify STT/text/numeric/note alignment separately
+-> Tạo/Cập nhật mục lục
+-> Open Bộ tiêu chuẩn / Trước phát hành / Trung tâm chi tiết
+-> Verify review-required / never-auto-fix are not auto-mutated
 -> Enable “Luôn mở HPC Assistant cùng tài liệu này”
 -> Save/close/reopen the same document
 -> Verify Task Pane auto-opens
--> Insert/update TOC
 -> Re-scan
--> Preflight status
+-> Verify final Preflight status
 ```
 
 Các API phụ thuộc phiên bản Word. Nếu host không hỗ trợ WordApi/WordApiDesktop cần thiết, add-in phải báo capability error/warning và không cố giả lập thao tác.
@@ -139,7 +157,7 @@ Production/runtime dependency audit hiện là gate blocking. Full dev/toolchain
 ## 9. Rollback deployment
 
 - Ứng dụng: gỡ assignment hoặc quay lại manifest/web build trước.
-- Formatting: dùng Rollback trong add-in khi structure guard còn hợp lệ.
+- Formatting: dùng `Hoàn tác HPC` khi structure guard còn hợp lệ.
 - TOC/table operations: dùng Word native Undo nếu cần hoàn nguyên ngay sau thao tác; smoke test phải xác nhận hành vi này trên Word Desktop mục tiêu.
 
 ## 10. Release gate
@@ -149,5 +167,7 @@ Chỉ đánh dấu production-approved khi:
 - GitHub Actions HEAD `main` pass production dependency audit + Build + Unit Tests + development/production manifest validation.
 - Web bundle production được host trên HTTPS thật.
 - Add-in được assignment qua Microsoft 365 Integrated Apps cho nhóm pilot.
-- Word Desktop smoke test pass trên bản sao tài liệu thực tế, gồm semantic table alignment và document auto-open.
+- Word Desktop smoke test pass trên bản sao tài liệu thực tế, gồm đủ 6 Ribbon direct commands, Detail Center review flows, semantic table alignment và document auto-open.
 - HPC phê duyệt các profile đang mang trạng thái `draft/unverified` trước khi dùng làm chuẩn chính thức.
+
+**CI xanh không thay thế Word Desktop smoke test.** Trạng thái release vẫn là `PENDING MANUAL` cho đến khi checklist môi trường bắt buộc được chạy và ghi nhận kết quả thật.
