@@ -18,12 +18,10 @@ function finding(id: string, severity: QualityFindingV2["severity"], category: R
     provenance: {
       sourceId: "SRC",
       sourceTitle: "Source",
-      sourceType: "law",
+      issuer: "Issuer",
       sourceLocator: "Appendix I",
       profileId: "P",
-      profileVersion: "1",
-      profileLayer: "legal",
-      trace: []
+      profileVersion: "1"
     }
   };
 }
@@ -31,7 +29,7 @@ function finding(id: string, severity: QualityFindingV2["severity"], category: R
 describe("document health and fix preview", () => {
   it("summarizes severity, category and fix-policy counts", () => {
     const findings = [
-      finding("a", "critical", "layout", "safe-auto-fix"),
+      finding("a", "critical", "layout", "auto-safe"),
       finding("b", "warning", "typography", "auto-with-preview"),
       finding("c", "suggestion", "typography", "review-required")
     ];
