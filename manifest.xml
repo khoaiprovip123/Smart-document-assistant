@@ -25,39 +25,103 @@
   <Permissions>ReadWriteDocument</Permissions>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Requirements>
-      <bt:Sets DefaultMinVersion="1.1"><bt:Set Name="WordApi" /></bt:Sets>
+      <bt:Sets DefaultMinVersion="1.1">
+        <bt:Set Name="WordApi" />
+        <bt:Set Name="AddinCommands" MinVersion="1.3" />
+      </bt:Sets>
     </Requirements>
     <Hosts>
       <Host xsi:type="Document">
         <DesktopFormFactor>
           <FunctionFile resid="Commands.Url" />
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
-            <OfficeTab id="TabHome">
-              <Group id="HPC.Group">
-                <Label resid="HPC.GroupLabel" />
+            <CustomTab id="HPC.Tab">
+              <Group id="HPC.Group.Check">
+                <Label resid="HPC.Group.Check.Label" />
                 <Icon>
                   <bt:Image size="16" resid="Icon.16x16" />
                   <bt:Image size="32" resid="Icon.32x32" />
                   <bt:Image size="80" resid="Icon.80x80" />
                 </Icon>
-                <Control xsi:type="Button" id="HPC.OpenTaskpane">
-                  <Label resid="HPC.ButtonLabel" />
-                  <Supertip>
-                    <Title resid="HPC.ButtonLabel" />
-                    <Description resid="HPC.ButtonDescription" />
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16" />
-                    <bt:Image size="32" resid="Icon.32x32" />
-                    <bt:Image size="80" resid="Icon.80x80" />
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId>
-                    <SourceLocation resid="Taskpane.Url" />
-                  </Action>
+                <Control xsi:type="Button" id="HPC.Check.Open">
+                  <Label resid="HPC.Check.Open.Label" />
+                  <Supertip><Title resid="HPC.Check.Open.Label" /><Description resid="HPC.Check.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
                 </Control>
               </Group>
-            </OfficeTab>
+              <Group id="HPC.Group.Fix">
+                <Label resid="HPC.Group.Fix.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Fix.Open">
+                  <Label resid="HPC.Fix.Open.Label" />
+                  <Supertip><Title resid="HPC.Fix.Open.Label" /><Description resid="HPC.Fix.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Group id="HPC.Group.Format">
+                <Label resid="HPC.Group.Format.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Format.Open">
+                  <Label resid="HPC.Format.Open.Label" />
+                  <Supertip><Title resid="HPC.Format.Open.Label" /><Description resid="HPC.Format.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Group id="HPC.Group.Table">
+                <Label resid="HPC.Group.Table.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Table.Open">
+                  <Label resid="HPC.Table.Open.Label" />
+                  <Supertip><Title resid="HPC.Table.Open.Label" /><Description resid="HPC.Table.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Group id="HPC.Group.Structure">
+                <Label resid="HPC.Group.Structure.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Structure.Open">
+                  <Label resid="HPC.Structure.Open.Label" />
+                  <Supertip><Title resid="HPC.Structure.Open.Label" /><Description resid="HPC.Structure.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Group id="HPC.Group.Standards">
+                <Label resid="HPC.Group.Standards.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Standards.Open">
+                  <Label resid="HPC.Standards.Open.Label" />
+                  <Supertip><Title resid="HPC.Standards.Open.Label" /><Description resid="HPC.Standards.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Group id="HPC.Group.Release">
+                <Label resid="HPC.Group.Release.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Release.Open">
+                  <Label resid="HPC.Release.Open.Label" />
+                  <Supertip><Title resid="HPC.Release.Open.Label" /><Description resid="HPC.Release.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Group id="HPC.Group.Tools">
+                <Label resid="HPC.Group.Tools.Label" />
+                <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                <Control xsi:type="Button" id="HPC.Tools.Open">
+                  <Label resid="HPC.Tools.Open.Label" />
+                  <Supertip><Title resid="HPC.Tools.Open.Label" /><Description resid="HPC.Tools.Open.Desc" /></Supertip>
+                  <Icon><bt:Image size="16" resid="Icon.16x16" /><bt:Image size="32" resid="Icon.32x32" /><bt:Image size="80" resid="Icon.80x80" /></Icon>
+                  <Action xsi:type="ShowTaskpane"><TaskpaneId>Office.AutoShowTaskpaneWithDocument</TaskpaneId><SourceLocation resid="Taskpane.Url" /></Action>
+                </Control>
+              </Group>
+              <Label resid="HPC.Tab.Label" />
+            </CustomTab>
           </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
@@ -73,11 +137,33 @@
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="HPC.GroupLabel" DefaultValue="HPC VĂN BẢN" />
-        <bt:String id="HPC.ButtonLabel" DefaultValue="HPC Assistant" />
+        <bt:String id="HPC.Tab.Label" DefaultValue="HPC VĂN BẢN" />
+        <bt:String id="HPC.Group.Check.Label" DefaultValue="KIỂM TRA" />
+        <bt:String id="HPC.Group.Fix.Label" DefaultValue="SỬA &amp; HOÀN TÁC" />
+        <bt:String id="HPC.Group.Format.Label" DefaultValue="ĐỊNH DẠNG" />
+        <bt:String id="HPC.Group.Table.Label" DefaultValue="BẢNG" />
+        <bt:String id="HPC.Group.Structure.Label" DefaultValue="HEADING &amp; MỤC LỤC" />
+        <bt:String id="HPC.Group.Standards.Label" DefaultValue="TIÊU CHUẨN" />
+        <bt:String id="HPC.Group.Release.Label" DefaultValue="PHÁT HÀNH" />
+        <bt:String id="HPC.Group.Tools.Label" DefaultValue="CÔNG CỤ" />
+        <bt:String id="HPC.Check.Open.Label" DefaultValue="Kiểm tra tài liệu" />
+        <bt:String id="HPC.Fix.Open.Label" DefaultValue="Sửa lỗi an toàn" />
+        <bt:String id="HPC.Format.Open.Label" DefaultValue="Chuẩn hóa" />
+        <bt:String id="HPC.Table.Open.Label" DefaultValue="Chuẩn hóa bảng" />
+        <bt:String id="HPC.Structure.Open.Label" DefaultValue="Heading &amp; Mục lục" />
+        <bt:String id="HPC.Standards.Open.Label" DefaultValue="Bộ tiêu chuẩn" />
+        <bt:String id="HPC.Release.Open.Label" DefaultValue="Trước phát hành" />
+        <bt:String id="HPC.Tools.Open.Label" DefaultValue="Trung tâm chi tiết" />
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="HPC.ButtonDescription" DefaultValue="Mở công cụ kiểm tra và chuẩn hóa văn bản HPC." />
+        <bt:String id="HPC.Check.Open.Desc" DefaultValue="Kiểm tra tài liệu và xem các vấn đề cần xử lý." />
+        <bt:String id="HPC.Fix.Open.Desc" DefaultValue="Xem trước và áp dụng các sửa lỗi an toàn." />
+        <bt:String id="HPC.Format.Open.Desc" DefaultValue="Mở công cụ định dạng và chuẩn hóa vùng chọn." />
+        <bt:String id="HPC.Table.Open.Desc" DefaultValue="Chuẩn hóa bảng theo kiểu dữ liệu từng cột, không ép một kiểu căn cho toàn bảng." />
+        <bt:String id="HPC.Structure.Open.Desc" DefaultValue="Quản lý Heading, đánh số và mục lục." />
+        <bt:String id="HPC.Standards.Open.Desc" DefaultValue="Chọn và quản lý bộ tiêu chuẩn áp dụng cho tài liệu." />
+        <bt:String id="HPC.Release.Open.Desc" DefaultValue="Kiểm tra tình trạng tài liệu trước khi phát hành." />
+        <bt:String id="HPC.Tools.Open.Desc" DefaultValue="Mở trung tâm chi tiết, audit, lịch sử thay đổi và cài đặt." />
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
