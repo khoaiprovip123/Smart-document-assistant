@@ -4,13 +4,36 @@ Microsoft Word Add-in giúp HPC kiểm tra, chuẩn hóa và quản trị thể 
 
 ## Trạng thái
 
-**1.0.0-rc.1 + V2 pilot** — Release Candidate để pilot trên Word Desktop trước khi phát hành production.
+**1.0.0-rc.1 + V2 pilot + Ribbon-first UX** — Release Candidate để pilot trên Word Desktop trước khi phát hành production.
 
-V2 hiện đã có Standards Foundation, Semantic Document Model, Core Quality Engines, Domain Profiles, Safe Fix policy/transaction architecture, Document Health, Fix Preview, Preflight, Template Learning/Review, Audit/QA và Persistent Word Mode.
+V2 hiện đã có Standards Foundation, Semantic Document Model, Core Quality Engines, Domain Profiles, Safe Fix policy/transaction architecture, Document Health, Fix Preview, Preflight, Template Learning/Review, Audit/QA, Persistent Word Mode và custom tab `HPC VĂN BẢN`.
+
+## Trải nghiệm Ribbon-first
+
+Add-in dùng một custom tab riêng trên Word: **`HPC VĂN BẢN`**. Các thao tác ngắn, kết quả thấy trực tiếp trên tài liệu chạy ngay từ Ribbon; các luồng cần đọc kết quả, preview hoặc review vẫn mở **Trung tâm chi tiết** trong Task Pane.
+
+Nhóm Ribbon hiện có: **KIỂM TRA**, **SỬA & HOÀN TÁC**, **ĐỊNH DẠNG**, **BẢNG**, **HEADING & MỤC LỤC**, **TIÊU CHUẨN**, **PHÁT HÀNH**, **CÔNG CỤ**.
+
+Lệnh 1-click trực tiếp:
+
+- `Hoàn tác HPC`.
+- `Chuẩn hóa vùng chọn`.
+- `HPC Styles`.
+- `Chuẩn hóa bảng`.
+- `Đánh số Heading`.
+- `Tạo/Cập nhật mục lục`.
+
+Luồng cần xem/review mở Task Pane:
+
+- `Kiểm tra tài liệu`.
+- `Sửa lỗi an toàn`.
+- `Bộ tiêu chuẩn`.
+- `Trước phát hành`.
+- `Trung tâm chi tiết`.
 
 ## Chức năng hiện có
 
-- Word Task Pane + Ribbon command.
+- Custom Ribbon tab + Word Task Pane Detail Center.
 - Profile V1 hệ thống `HPC-ND30`, `HPC-INTERNAL`, `HPC-SOP`.
 - V2 built-in profiles gồm ND30 verified subset, HPC Corporate/SOP draft packs và Academic neutral base.
 - Import Rule Profile JSON tùy chỉnh trong Task Pane.
@@ -52,6 +75,7 @@ Các profile HPC Corporate/SOP vẫn là `unverified` cho đến khi HPC phê du
 - Rollback bị chặn nếu nội dung/cấu trúc thay đổi sau transaction.
 - Nếu Word thiếu API cần thiết, Preflight hạ trạng thái xuống Review thay vì giả lập kết quả.
 - Cột bảng confidence thấp được giữ nguyên thay vì đoán.
+- Phase Ribbon-first hiện không bật Shared Runtime và không bật V2 mutation adapter.
 
 ## Development
 
@@ -90,8 +114,9 @@ npm run validate:manifest:production
 ```
 
 3. Triển khai manifest qua Microsoft 365 Admin Center / Integrated Apps cho nhóm pilot.
-4. Người dùng mở Word bình thường; `HPC Assistant` xuất hiện trên Ribbon cho tài khoản được assignment.
-5. Với file cần tự mở Task Pane ở lần sau, bật `Luôn mở HPC Assistant cùng tài liệu này`.
+4. Người dùng mở Word bình thường; custom tab `HPC VĂN BẢN` xuất hiện cho tài khoản được assignment.
+5. Dùng các lệnh 1-click ngay trên Ribbon; mở `Trung tâm chi tiết` khi cần scan/findings/preview/profile/audit/release review.
+6. Với file cần tự mở Task Pane ở lần sau, bật `Luôn mở HPC Assistant cùng tài liệu này`.
 
 Chi tiết xem `INSTALL.md` và `DEPLOYMENT.md`.
 
@@ -102,12 +127,21 @@ Chi tiết xem `INSTALL.md` và `DEPLOYMENT.md`.
 - `DEPLOYMENT.md`: production hosting + Microsoft 365 rollout.
 - `docs/standards/SOURCE_CATALOG.md`: source governance cho V2.
 - `docs/qa/`: corpus, performance baseline và Word Desktop release matrix.
+- `docs/superpowers/specs/2026-09-14-ribbon-first-word-ux-design.md`: Ribbon-first UX design.
+- `docs/superpowers/plans/2026-09-14-ribbon-first-word-ux-plan.md`: Ribbon-first implementation plan.
 - `docs/superpowers/specs/2026-09-14-document-standards-platform-v2-design.md`: V2 architecture/design.
 - `docs/superpowers/plans/2026-09-14-document-standards-platform-v2-master-plan.md`: master plan M1-M6.
 
 ## Trước khi phát hành production
 
-Bắt buộc Word Desktop smoke test trên **bản sao tài liệu thật**: Ribbon persistent → Scan V1/V2 → Health/Preview/Preflight → Styles → Fix/Rollback → Numbering → Semantic Table → TOC → bật auto-open → save/close/reopen file → Re-scan.
+Bắt buộc Word Desktop smoke test trên **bản sao tài liệu thật**:
+
+1. Xác nhận tab `HPC VĂN BẢN` và đủ 8 nhóm Ribbon.
+2. Chạy `Kiểm tra tài liệu` và xác nhận Detail Center hiển thị Scan V1/V2, Health, Preview và Preflight.
+3. Chạy lần lượt 6 lệnh trực tiếp: `HPC Styles` → `Chuẩn hóa vùng chọn` → `Hoàn tác HPC` → `Chuẩn hóa bảng` → `Đánh số Heading` → `Tạo/Cập nhật mục lục`.
+4. Kiểm tra `Sửa lỗi an toàn`, finding navigation và rollback guard.
+5. Bật auto-open → save/close/reopen cùng file → xác nhận Task Pane mở lại.
+6. Re-scan và xác nhận trạng thái phát hành cuối.
 
 Release Candidate chưa được xem là production-approved cho đến khi smoke matrix thực tế hoàn tất.
 
