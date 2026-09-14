@@ -2,17 +2,36 @@
 
 ## Unreleased
 
-### V2 Document Standards Platform planning
+### V2 Document Standards Platform
+
+- Hoàn tất M1 Standards Foundation: source registry, rule registry, profile registry, precedence resolution và provenance.
+- Hoàn tất M2 Semantic Document Model: capability matrix, section/paragraph/table/field/picture/comment/tracked-change snapshot, semantic role classifier và Word adapter.
+- Hoàn tất M3 Core Quality Engines: layout, typography, structure, heading hierarchy, table, text-quality, release hygiene và deterministic aggregate runner.
+- Hoàn tất M4 Domain Profiles:
+  - `VN-ND30-ADMIN` là **verified subset** dựa trên nguồn Chính phủ; không tuyên bố full legal compliance.
+  - Không mã hóa orientation Portrait thành rule cứng vì ND30 có trường hợp cho phép trang ngang và engine hiện chưa biểu diễn đủ điều kiện ngoại lệ.
+  - `HPC-CORPORATE-BASE`, Tờ trình/Báo cáo/Biên bản/Ghi nhớ/Hướng dẫn, `HPC-SOP-POLICY` và `ACADEMIC-BASE` giữ trạng thái `unverified` cho đến khi có nguồn/quy định được phê duyệt.
+- Hoàn tất M5 Safe Fix & Preflight core:
+  - Fix policy `auto-safe` / `auto-with-preview` / `review-required` / `never-auto-fix`.
+  - `Fix All Safe` executor chặn `review-required` và `never-auto-fix` trước mutation boundary.
+  - Transaction history nhiều bước, immutable snapshot và structure-safe rollback guard.
+  - Source-backed Fix Preview, Document Health dashboard và V2 Preflight `READY` / `REVIEW_REQUIRED` / `BLOCKED`.
+  - V2 workflow orchestration: V1 system-profile mapping → semantic snapshot → resolved profile → engines → health/preview/preflight.
+  - Task Pane hiển thị V2 health, fixability, provenance preview, capability gaps và preflight song song với V1 compatibility.
+- V2 Word mutation adapter vẫn ở chế độ preview/policy architecture; mutation thực tế tiếp tục dùng V1 compatibility cho đến khi V2 adapter qua Word Desktop smoke test.
+- CI đã kiểm chứng M3, M4, M5 core, orchestration, Fix All Safe boundary và Task Pane integration bằng Build + Unit Tests + development/production manifest validation.
+- `npm install` hiện vẫn báo 13 dependency vulnerabilities (5 moderate, 7 high, 1 critical). Chưa dùng `npm audit fix --force` vì có thể tạo breaking changes; cần audit riêng trước production hardening.
+
+### Planning / source governance
 
 - Thêm V2 architecture cho Document Standards Platform đa chuẩn: hành chính, học thuật, khoa học, xuất bản, corporate, SOP và custom institution/publisher profiles.
 - Thêm source-backed standards model, profile precedence, provenance, safe-fix policy, semantic document model và preflight release gates vào thiết kế.
 - Thêm Master Implementation Plan theo 6 milestone M1-M6 với task ID, dependency, P0/P1/P2, acceptance criteria, test cases và release gates.
 - Thêm `docs/standards/SOURCE_CATALOG.md` ghi nguồn chính thức/primary source đã kiểm chứng và quy tắc ingest/re-verify.
 - Thêm execution plan chi tiết cho M1 Standards Foundation theo TDD RED -> GREEN.
-- Bắt đầu RED test suite cho V2 Standards Foundation trên `main`.
 
 - Chờ Word Desktop smoke test của release candidate trên tài liệu pilot thực tế.
-- `HPC-INTERNAL` và `HPC-SOP` vẫn cần HPC phê duyệt rule nghiệp vụ trước production.
+- `HPC-INTERNAL` và `HPC-SOP` V1 vẫn cần HPC phê duyệt rule nghiệp vụ trước production.
 
 ## 1.0.0-rc.1 - 2026-09-14
 
