@@ -103,7 +103,7 @@ export default function V2OperationsPanel() {
       setRequirementJson(Object.fromEntries(
         nextState.proposals.map((proposal) => [proposal.id, JSON.stringify(proposal.rule.requirement, null, 2)])
       ));
-      setStatus(`Đã phân tích template: ${nextState.proposals.length} proposal, confidence ${Math.round(nextAnalysis.confidence * 100)}%. Tất cả vẫn UNVERIFIED.`);
+      setStatus(`Đã phân tích template: ${nextState.proposals.length} đề xuất, độ tin cậy ${Math.round(nextAnalysis.confidence * 100)}%. Tất cả vẫn UNVERIFIED.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể phân tích template hiện tại.");
     } finally {
@@ -129,7 +129,7 @@ export default function V2OperationsPanel() {
       const parsed = JSON.parse(raw ?? "null") as unknown;
       if (!isQualityRequirement(parsed)) throw new Error("Requirement JSON không đúng QualityRequirement schema hỗ trợ.");
       const current = reviewState.proposals.find((proposal) => proposal.id === proposalId);
-      if (!current) throw new Error(`Không tìm thấy proposal ${proposalId}.`);
+      if (!current) throw new Error(`Không tìm thấy đề xuất ${proposalId}.`);
       setReviewState(reviewProposal(reviewState, proposalId, { decision: current.decision, requirement: parsed }));
       setRequirementJson((value) => ({ ...value, [proposalId]: JSON.stringify(parsed, null, 2) }));
       setStatus(`Đã cập nhật requirement cho ${proposalId}; trạng thái xác minh vẫn UNVERIFIED.`);
@@ -144,7 +144,7 @@ export default function V2OperationsPanel() {
     try {
       const artifact = buildReviewedProfileExport(reviewState);
       downloadJson(`${safeFilePart(artifact.profile.id)}-${safeFilePart(artifact.profile.version)}-unverified.json`, artifact);
-      setStatus(`Đã xuất ${artifact.rules.length} rule đã review. Profile vẫn UNVERIFIED và chưa tự đăng ký vào standards registry.`);
+      setStatus(`Đã xuất ${artifact.rules.length} rule đã review. Bộ tiêu chuẩn vẫn UNVERIFIED và chưa tự đăng ký vào standards registry.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể xuất learned profile draft.");
     }
@@ -158,7 +158,7 @@ export default function V2OperationsPanel() {
       const report = evaluateV2Quality(V2_REGISTRY, profileRef, semantic);
       const audit = buildV2AuditReport(report);
       downloadJson(`${safeFilePart(report.profile.id)}-${safeFilePart(report.profile.version)}-audit.json`, audit);
-      setStatus(`Đã xuất audit V2: ${audit.unresolvedFindings.length} finding, preflight ${audit.preflightStatus}.`);
+      setStatus(`Đã xuất audit V2: ${audit.unresolvedFindings.length} vấn đề, kiểm tra trước phát hành ${audit.preflightStatus}.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Không thể tạo audit report V2.");
     } finally {
@@ -173,9 +173,9 @@ export default function V2OperationsPanel() {
       const semantic = await readSemanticDocumentSnapshot();
       const next = buildTransactionHistoryView(compatibilityTransactionStore.history(), semantic);
       setHistory(next);
-      setStatus(`Transaction History: ${next.length} mục; chỉ transaction mới nhất và còn nguyên cấu trúc mới đủ điều kiện rollback.`);
+      setStatus(`Lịch sử thay đổi: ${next.length} mục; chỉ thay đổi mới nhất và còn nguyên cấu trúc mới đủ điều kiện hoàn tác.`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể đọc transaction history.");
+      setError(err instanceof Error ? err.message : "Không thể đọc lịch sử thay đổi.");
     } finally {
       setBusy(false);
     }
@@ -185,11 +185,11 @@ export default function V2OperationsPanel() {
     <section className={styles.root}>
       <Card className={styles.stack}>
         <div className={styles.spread}>
-          <Text weight="semibold">V2 Operations & QA</Text>
+          <Text weight="semibold">Công cụ nâng cao & QA</Text>
           <Badge color="warning">PILOT</Badge>
         </div>
         <Text size={200} className={styles.note}>
-          Các công cụ V2 quản trị template/audit/release. V1 compatibility vẫn là mutation path cho tới khi Word Desktop smoke hoàn tất.
+          Khu vực chi tiết cho template, audit và phát hành. Các thao tác thường dùng đã chuyển lên tab HPC VĂN BẢN trên Ribbon.
         </Text>
         <Dropdown
           value={selectedProfile.name}
@@ -209,7 +209,7 @@ export default function V2OperationsPanel() {
         <div className={styles.row}>
           <Button appearance="primary" onClick={() => void learnFromCurrentDocument()} disabled={busy}>Học từ tài liệu hiện tại</Button>
           <Button onClick={() => void exportAudit()} disabled={busy}>Xuất Audit JSON</Button>
-          <Button onClick={() => void refreshTransactionHistory()} disabled={busy}>Làm mới Transaction History</Button>
+          <Button onClick={() => void refreshTransactionHistory()} disabled={busy}>Làm mới lịch sử thay đổi</Button>
         </div>
       </Card>
 
@@ -239,49 +239,49 @@ export default function V2OperationsPanel() {
 
       <Card className={styles.stack}>
         <div className={styles.spread}>
-          <Text weight="semibold">Transaction History</Text>
+          <Text weight="semibold">Lịch sử thay đổi</Text>
           <Badge appearance="outline">{history.length}</Badge>
         </div>
         {history.length === 0 ? (
-          <Text size={200} className={styles.note}>Chưa có transaction compatibility trong phiên hoặc chưa bấm làm mới.</Text>
+          <Text size={200} className={styles.note}>Chưa có thay đổi compatibility trong phiên hoặc chưa bấm làm mới.</Text>
         ) : history.map((transaction) => (
           <div className={styles.item} key={transaction.id}>
             <div className={styles.row}>
               <Text weight="semibold">{transaction.label}</Text>
-              {transaction.isLatest && <Badge appearance="outline">LATEST</Badge>}
+              {transaction.isLatest && <Badge appearance="outline">MỚI NHẤT</Badge>}
               <Badge color={transaction.rollbackEligible ? "success" : "subtle"}>
-                {transaction.rollbackEligible ? "ROLLBACK ELIGIBLE" : "READ ONLY"}
+                {transaction.rollbackEligible ? "CÓ THỂ HOÀN TÁC" : "CHỈ XEM"}
               </Badge>
             </div>
             <Text size={200} className={styles.note}>
-              {transaction.createdAt ?? "Không có timestamp"} · {transaction.findingCount} finding
+              {transaction.createdAt ?? "Không có timestamp"} · {transaction.findingCount} vấn đề
             </Text>
           </div>
         ))}
         <Text size={200} className={styles.note}>
-          Lịch sử này theo dõi Fix Selected, Normalize Selection và Heading Numbering trên V1 compatibility path; không thay thế safety guard của rollback hiện hữu.
+          Lịch sử này theo dõi Sửa mục đã chọn, Chuẩn hóa vùng chọn và Đánh số Heading trên V1 compatibility path; không thay thế safety guard của hoàn tác hiện hữu.
         </Text>
       </Card>
 
       <Card className={styles.stack}>
         <div className={styles.spread}>
-          <Text weight="semibold">Word Desktop Release Matrix</Text>
-          <Badge color="warning">PENDING MANUAL</Badge>
+          <Text weight="semibold">Ma trận phát hành Word Desktop</Text>
+          <Badge color="warning">CHỜ KIỂM TRA THỦ CÔNG</Badge>
         </div>
         {DEFAULT_RELEASE_MATRIX.environments.map((environment) => (
           <div className={styles.item} key={environment.id}>
             <div className={styles.row}>
               <Text>{environment.label}</Text>
-              {environment.required && <Badge appearance="outline">REQUIRED</Badge>}
-              <Badge color="warning">NOT RUN</Badge>
+              {environment.required && <Badge appearance="outline">BẮT BUỘC</Badge>}
+              <Badge color="warning">CHƯA CHẠY</Badge>
             </div>
           </div>
         ))}
-        <Text size={200} weight="semibold">Smoke checklist</Text>
+        <Text size={200} weight="semibold">Danh sách smoke test</Text>
         <Text size={200}>{WORD_DESKTOP_SMOKE_CHECKLIST.join(" → ")}</Text>
         <div className={styles.warning}>
           <Text size={200}>
-            Không tự đánh dấu QUALIFIED. Production qualification chỉ hợp lệ sau khi môi trường Word Desktop bắt buộc chạy đủ checklist và kết quả thật được ghi nhận.
+            Không tự đánh dấu đạt phát hành. Chỉ xác nhận production sau khi môi trường Word Desktop bắt buộc chạy đủ checklist và kết quả thật được ghi nhận.
           </Text>
         </div>
       </Card>
