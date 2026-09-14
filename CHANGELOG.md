@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### CI Reliability
+
+- Thêm `concurrency` cho GitHub Actions CI theo workflow + PR/branch.
+- Bật `cancel-in-progress: true` để run mới tự hủy run CI cũ cùng PR/branch, giảm tình trạng queued chồng nhau.
+- Giữ nguyên các bước build, unit test và Office manifest validation.
+- Ghi nhận các run cũ ở trạng thái `queued` nhưng không có job là record stale/orphan phía GitHub Actions; thay đổi này nhằm ngăn phát sinh thêm run trùng trong repo.
+
 ### Phase 2 - Safe Auto-Fix & Rollback Hardening
 
 - Chặn Auto-Fix đối với font/cỡ chữ `Mixed/Unknown` để bảo toàn mixed/run-level formatting.
