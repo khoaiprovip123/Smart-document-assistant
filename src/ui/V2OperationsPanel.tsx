@@ -27,6 +27,7 @@ import {
 } from "../templates/profileReview";
 import { evaluateV2Quality } from "../v2/workflow";
 import { readSemanticDocumentSnapshot } from "../word/semanticWordService";
+import PersistentWordCard from "./PersistentWordCard";
 import TemplateReviewPanel from "./TemplateReviewPanel";
 
 const V2_REGISTRY = createBuiltinDomainRegistry();
@@ -211,6 +212,8 @@ export default function V2OperationsPanel() {
           <Button onClick={() => void refreshTransactionHistory()} disabled={busy}>Làm mới Transaction History</Button>
         </div>
       </Card>
+
+      <PersistentWordCard />
 
       {busy && <Spinner label="Đang xử lý V2..." />}
       {error && <div className={styles.error}><Text>{error}</Text></div>}
